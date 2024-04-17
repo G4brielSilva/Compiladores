@@ -1,15 +1,21 @@
-mod linked_list;
 mod enum_token;
+mod node;
 
-use linked_list::LinkedList;
 use enum_token::Token;
+use node::Node;
+use std::collections::LinkedList;
 
 fn main() {
-    let mut list = LinkedList::new((-1).to_string(), Token::Struct);
+    let mut list: LinkedList<Node> = LinkedList::new();
     
     for value in 0..10 {
-        list.append(value.to_string(), Token::Final);
+        list.push_back(Node {
+            value: value.to_string(),
+            token: Token::Struct,
+        });
     }
     
-    list.print();
+    for elem in &list {
+        println!("{} {}", elem.value, "Token Struct");
+    }
 }
