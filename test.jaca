@@ -1,4 +1,4 @@
-Interface Collection {
+interface Collection {
     public local base void add(Pessoa p);
     public local base Pessoa get(char[] nome);
 }

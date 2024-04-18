@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub enum Token {
     Struct,
     Instance,
@@ -23,4 +24,6 @@ pub enum Token {
     Field,
     String,
     Char,
+    Block,
+    Identifier
 }
