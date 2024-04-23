@@ -72,6 +72,18 @@ fn classificate_value(value: &str) -> Token {
         "(" | ")" => Token::Parenthesis,
         "[" | "]" => Token::ArrayBracket,
         "{" | "}" => Token::Block,
+        "while" | "do" | "if" | "for" | "switch" | "break" | "continue" | "return" => Token::Command,
+        "=" => Token::Atrib, //revisar
+        "else" => Token::Else,
+        "case" | "default" => Token::Case, //revisar default
+        "++" | "--" => Token::Operator,
+        "," => Token::ParamList,
+        ">" | "<" | ">=" | "<=" | "==" | "!=" => Token::LogicOperator,
+        "+" | "-" | "*" | "/" => Token::MathOperator,
+        "this" => Token::This,
+        "." => Token::Field,
+        ' " ' => Token::String,
+        " ' " => Token::Char,
         default => Token::Identifier
     }
 }
