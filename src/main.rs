@@ -6,6 +6,7 @@ use node::Node;
 use std::collections::LinkedList;
 use std::fs::File;
 use std::io::prelude::*;
+use regex::Regex;
 
 fn separate_file_content(content: &String) -> Vec<String> {
     let delimiters = vec!['\n', ' '];
@@ -41,6 +42,12 @@ fn break_token(token: &str) -> Vec<String> {
     let mut result: Vec<String> = Vec::new();
 
     let mut string = String::new();
+
+    if (valid_numeric_value(token) || has_more_then_one_decimal_point(token) || valid_string_value(token) || valid_char_value(token)) {
+        result.push(token.to_string());
+        return result;
+    }
+
     for c in token.chars() {
         if is_char_alphanumeric_or_underscore(&c) {
             string.push(c);
@@ -57,8 +64,45 @@ fn break_token(token: &str) -> Vec<String> {
     result
 }
 
+fn valid_numeric_value(s: &str) -> bool {
+    let re = Regex::new(r"^\d+(\.\d+)?$").unwrap();
+    re.is_match(s)
+}
+
+fn valid_string_value(s: &str) -> bool {
+    let re = regex::Regex::new(r#""([^"]*)""#).unwrap();
+    re.is_match(s)
+}
+
+fn valid_char_value(s: &str) -> bool {
+    let re = regex::Regex::new(r#"'([^']*)'"#).unwrap();
+    re.is_match(s)
+}
+
+fn has_more_then_one_decimal_point(s: &str) -> bool {
+    let re = Regex::new(r"^[^.]*\..*\..*$").unwrap();
+    re.is_match(s)
+}
+
+fn classificate_identifier_number_or_error(value: &str) -> Token {
+    if (valid_numeric_value(value)) {
+        return Token::Number
+    }
+    if (has_more_then_one_decimal_point(value)) {
+        return Token::Error
+    }
+    return Token::Identifier
+}
 
 fn classificate_value(value: &str) -> Token {
+    if (valid_string_value(value)) {
+        return Token::String
+    }
+
+    if (valid_char_value(value)) {
+        return Token::Char
+    }
+
     match value {
         "struct" => Token::Struct,
         "class" | "interface" => Token::Instance,
@@ -73,18 +117,16 @@ fn classificate_value(value: &str) -> Token {
         "[" | "]" => Token::ArrayBracket,
         "{" | "}" => Token::Block,
         "while" | "do" | "if" | "for" | "switch" | "break" | "continue" | "return" => Token::Command,
-        "=" => Token::Atrib, //revisar
+        "=" => Token::Atrib,
         "else" => Token::Else,
-        "case" | "default" => Token::Case, //revisar default
+        "case" | "default" => Token::Case,
         "++" | "--" => Token::Operator,
         "," => Token::ParamList,
         ">" | "<" | ">=" | "<=" | "==" | "!=" => Token::LogicOperator,
         "+" | "-" | "*" | "/" => Token::MathOperator,
         "this" => Token::This,
         "." => Token::Field,
-        ' " ' => Token::String,
-        " ' " => Token::Char,
-        default => Token::Identifier
+        default => classificate_identifier_number_or_error(default)
     }
 }
 

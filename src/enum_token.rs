@@ -14,7 +14,7 @@ pub enum Token {
     Command,
     Else,
     Atrib,
-    SwitchCase,
+    Switch,
     New,
     Operator,
     ParamList,
@@ -27,5 +27,8 @@ pub enum Token {
     String,
     Char,
     Block,
-    Identifier
+    Identifier,
+    Case,
+    Number,
+    Error
 }

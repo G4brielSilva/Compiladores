@@ -1,4 +1,10 @@
 interface Collection {
-    public local base void add(Pessoa p);
-    public local base Pessoa get(char[] nome);
+    10
+    10.0
+    10.0.0
+    "string"
+    '\n'
+    'exemplo'
+    "z"
 }
+
