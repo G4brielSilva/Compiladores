@@ -43,7 +43,7 @@ fn break_token(token: &str) -> Vec<String> {
 
     let mut string = String::new();
 
-    if (valid_numeric_value(token) || has_more_then_one_decimal_point(token) || valid_string_value(token) || valid_char_value(token)) {
+    if valid_numeric_value(token) || has_more_then_one_decimal_point(token) || valid_string_value(token) || valid_char_value(token) {
         result.push(token.to_string());
         return result;
     }
