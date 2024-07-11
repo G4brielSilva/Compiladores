@@ -1,6 +1,8 @@
 mod enum_token;
 mod node;
+mod tree;
 
+use tree::TreeNode;
 use enum_token::Token;
 use node::Node;
 use std::collections::LinkedList;
@@ -85,21 +87,21 @@ fn has_more_then_one_decimal_point(s: &str) -> bool {
 }
 
 fn classificate_identifier_number_or_error(value: &str) -> Token {
-    if (valid_numeric_value(value)) {
+    if valid_numeric_value(value) {
         return Token::Number
     }
-    if (has_more_then_one_decimal_point(value)) {
+    if has_more_then_one_decimal_point(value) {
         return Token::Error
     }
     return Token::Identifier
 }
 
 fn classificate_value(value: &str) -> Token {
-    if (valid_string_value(value)) {
+    if valid_string_value(value) {
         return Token::String
     }
 
-    if (valid_char_value(value)) {
+    if valid_char_value(value) {
         return Token::Char
     }
 
@@ -136,6 +138,17 @@ fn print_linked_list(list: &LinkedList<Node>) {
     }
 }
 
+fn give_grammatical_structure(tree: &mut TreeNode<&str>) {
+    if tree.value == "DECLARATION" {
+        tree.add_child(TreeNode::new("STRUCT"));
+        tree.add_child(TreeNode::new("ID"));
+        tree.add_child(TreeNode::new("INHERITANCE"));
+        tree.add_child(TreeNode::new("{"));
+        tree.add_child(TreeNode::new("ITEM_DESCS"));
+        tree.add_child(TreeNode::new("}"));
+    }
+}
+
 fn main() -> std::io::Result<()> {
     let mut list: LinkedList<Node> = LinkedList::new();
     
@@ -147,10 +160,18 @@ fn main() -> std::io::Result<()> {
     // Transformando Objeto String em literal &str para facilitar comparação
     let parsed_strings: Vec<&str> = strings.iter().map(|s| s.as_str()).collect();
     
+    let mut tree: TreeNode<&str> = TreeNode::new("PROGRAM");
+    tree.add_child(TreeNode::new("DECLARATION"));
+    tree.add_child(TreeNode::new("DECLARATIONS"));
+
+    give_grammatical_structure(&mut tree.children[0]);
+
+    tree.list();
 
     for value in parsed_strings {
         // Classificando valores no tipo de token
         let token = classificate_value(value);
+
         list.push_back(Node {
             value: value.to_string(),
             token

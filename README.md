@@ -80,3 +80,14 @@ Regras gramaticais
 3. ClassBody -> ClassMember ClassBody | ε
 4. ClassMember -> (Class | Interface | Abstract | Concrete)
 5. Class -> class id
+
+### Rodando o projeto
+``` bash
+cargo run
+```
+
+PROGRAM -> [DECLARATION] [DECLARATIONS]
+
+[DECLARATION] [DECLARATIONS] -> [DECLARATION] [DECLARATIONS] || E
+
+[DECLARATION] -> [STRUCT] [ID] [INHERITANCE] ({) [ITEM_DECLS] (})
