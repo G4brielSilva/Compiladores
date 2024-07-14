@@ -1,10 +1,9 @@
 interface Collection {
-    10
-    10.0
-    10.0.0
-    "string"
-    '\n'
-    'exemplo'
-    "z"
+    public static final 10
+    public static final 10.0
+    public static final 10.0.0
+    public static final "string"
+    public static final '\n'
+    public static final 'exemplo'
+    public static final "z"
 }
-
