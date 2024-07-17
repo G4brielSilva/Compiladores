@@ -146,6 +146,7 @@ fn print_linked_list(list: &LinkedList<Node>) {
 // fn give_grammatical_structure(tree: &mut TreeNode<&str>, list: &LinkedList<Node>) {
 // fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list: &'a LinkedList<Node>) {
 fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list_iter: &mut std::collections::linked_list::IterMut<'a, Node>) {
+    tree.list();
         match tree.value {
             "PROGRAM" => {
                 tree.add_child(TreeNode::new("DECLARATION"));
@@ -215,22 +216,28 @@ fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list_iter: &mut 
                 }
             },
             "ITEM_DECLS" => { //[VISIBILITY] [SCOPE] [FINAL] [ITEM_DECL] (;) [ITEM_DECLS]
-                tree.add_child(TreeNode::new("VISIBILITY"));
-                give_grammatical_structure(&mut tree.children[0], list_iter);
+                if let Some(_) = list_iter.next(){
+                    tree.add_child(TreeNode::new("VISIBILITY"));
+                    give_grammatical_structure(&mut tree.children[0], list_iter);
+                    
+                    tree.add_child(TreeNode::new("SCOPE"));
+                    give_grammatical_structure(&mut tree.children[1], list_iter);
+
+                    tree.add_child(TreeNode::new("FINAL"));
+                    give_grammatical_structure(&mut tree.children[2], list_iter);
+
+                    tree.add_child(TreeNode::new("ITEM_DECL"));
+                    give_grammatical_structure(&mut tree.children[3], list_iter);
+
+                    tree.add_child(TreeNode::new(";"));
+
+                    tree.add_child(TreeNode::new("ITEM_DECLS"));
+                    give_grammatical_structure(&mut tree.children[5], list_iter);
+                }else{
+                    tree.add_child(TreeNode::new(EPSLON));
+                    return;
+                }
                 
-                tree.add_child(TreeNode::new("SCOPE"));
-                give_grammatical_structure(&mut tree.children[1], list_iter);
-
-                tree.add_child(TreeNode::new("FINAL"));
-                give_grammatical_structure(&mut tree.children[2], list_iter);
-
-                tree.add_child(TreeNode::new("ITEM_DECL"));
-                give_grammatical_structure(&mut tree.children[3], list_iter);
-
-                tree.add_child(TreeNode::new(";"));
-
-                tree.add_child(TreeNode::new("ITEM_DECLS"));
-                give_grammatical_structure(&mut tree.children[5], list_iter);
             },
             "VISIBILITY" => { // (public) | (protected) | (private)
                 if let Some(node_item) = list_iter.next() { 
@@ -247,7 +254,7 @@ fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list_iter: &mut 
                 }
             },
             "FINAL" => { // (final) | (base)
-                if let Some(node_item) = list_iter.next() { 
+                if let Some(node_item) = list_iter.next() {
                     if node_item.value == "final" || node_item.value == "base" {
                         tree.add_child(TreeNode::new(&node_item.value));
                     }
@@ -256,6 +263,7 @@ fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list_iter: &mut 
             "ITEM_DECL" => { // [ATRIB_DECL] | [METHOD_DECL]
                 // É necessária implementar a lógica para pegar ATRIB ou METHOD DECL    
                 if let Some(node_item) = list_iter.next() {
+                    println!("{}",node_item.value);
                     if node_item.value == "ATRIB_DECL" || node_item.value == "METHOD_DECL" {
                         tree.add_child(TreeNode::new(&node_item.value));
                     } 
@@ -310,10 +318,6 @@ fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list_iter: &mut 
                 tree.add_child(TreeNode::new(";"));
             },
             "VALUE" => {
-                while let Some(node_item) = list_iter.next() { // Isso é apenas um stop do processamento, basta remover essa parte e implementar o resto
-                    tree.add_child(TreeNode::new(&node_item.value));
-                }
-
                 if let Some(node_item) = list_iter.next() { 
                     if node_item.value == "=" {
                         tree.add_child(TreeNode::new("="));
@@ -615,17 +619,17 @@ fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list_iter: &mut 
             },
             "EXP" => {
                 if let Some(node_item) = list_iter.next(){
-                    if node_item.value == "case" {
+                    if node_item.value == "EXP_MATH" {
 
                         tree.add_child(TreeNode::new("EXP_MATH"));
                         give_grammatical_structure(&mut tree.children[0], list_iter);
 
-                    } else if node_item.value == "case" {
+                    } else if node_item.value == "EXP_LOGIC" {
 
                         tree.add_child(TreeNode::new("EXP_LOGIC"));
                         give_grammatical_structure(&mut tree.children[0], list_iter);
 
-                    } else if node_item.value == "case" {
+                    } else if node_item.value == "OPERATOR" {
 
                         tree.add_child(TreeNode::new("OPERATOR"));
                         give_grammatical_structure(&mut tree.children[0], list_iter);
@@ -636,7 +640,7 @@ fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list_iter: &mut 
                         tree.add_child(TreeNode::new("NAME"));
                         give_grammatical_structure(&mut tree.children[2], list_iter);
                         
-                    }else if node_item.value == "case" {
+                    }else if node_item.value == "new" {
                         
                         tree.add_child(TreeNode::new("new"));
 
@@ -837,7 +841,7 @@ fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list_iter: &mut 
 fn main() -> std::io::Result<()> {
     let mut list: LinkedList<Node> = LinkedList::new();
     
-    let mut contents = read_file("./test.jaca")?; 
+    let contents = read_file("./test.jaca")?; 
 
     let strings = separate_file_content(&contents); // Separando as strings do arquivo em tokens
     println!("{:?}", strings);
@@ -858,7 +862,6 @@ fn main() -> std::io::Result<()> {
     }
 
     let mut list_iter = list.iter_mut();
-
     // Chama a função para iniciar a análise gramatical
     give_grammatical_structure(&mut tree, &mut list_iter);
     tree.list();
