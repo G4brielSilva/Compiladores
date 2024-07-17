@@ -15,8 +15,8 @@ impl<T: Debug> TreeNode<T> {
         }
     }
 
-    pub fn add_child(&mut self, child: TreeNode<T>) {
-        self.children.push(child);
+    pub fn add_child(&mut self, data: T) {
+        self.children.push(TreeNode::new(data));
     }
 
     pub fn list(&self) {
