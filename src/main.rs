@@ -196,10 +196,11 @@ fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list_iter: &mut 
                     }
                 }
             },
-            "ID" => {
+            "INSTANCE" => {
                 if let Some(node_item) = list_iter.next() { 
-                    tree.add_child(TreeNode::new(&node_item.value));
-                    return;
+                    if node_item.value == "abstract" || node_item.value == "concrete" {
+                        tree.add_child(TreeNode::new(&node_item.value));
+                    } 
                 }
             },
             "INHERITANCE" => {
@@ -214,6 +215,7 @@ fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list_iter: &mut 
                 }
             },
             "ITEM_DECLS" => { //[VISIBILITY] [SCOPE] [FINAL] [ITEM_DECL] (;) [ITEM_DECLS]
+                !
                 tree.add_child(TreeNode::new("VISIBILITY"));
                 give_grammatical_structure(&mut tree.children[0], list_iter);
                 
@@ -227,7 +229,6 @@ fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list_iter: &mut 
                 give_grammatical_structure(&mut tree.children[3], list_iter);
 
                 tree.add_child(TreeNode::new(";"));
-                return;
 
                 tree.add_child(TreeNode::new("ITEM_DECLS"));
                 give_grammatical_structure(&mut tree.children[5], list_iter);
@@ -255,9 +256,11 @@ fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list_iter: &mut 
             },
             "ITEM_DECL" => { // [ATRIB_DECL] | [METHOD_DECL]
                 // É necessária implementar a lógica para pegar ATRIB ou METHOD DECL    
-
-                tree.add_child(TreeNode::new("ATRIB_DECL"));
-                give_grammatical_structure(&mut tree.children[0], list_iter);   
+                if let Some(node_item) = list_iter.next() {
+                    if node_item.value == "ATRIB_DECL" || node_item.value == "METHOD_DECL" {
+                        tree.add_child(TreeNode::new(&node_item.value));
+                    } 
+                }
             },
             "ATRIB_DECL" => { // [TYPE] [VAR] [VAR_LIST] (;)
                 tree.add_child(TreeNode::new("TYPE"));
@@ -307,27 +310,6 @@ fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list_iter: &mut 
 
                 tree.add_child(TreeNode::new(";"));
             },
-            "NAME" => {
-                while let Some(node_item) = list_iter.next() { // Isso é apenas um stop do processamento, basta remover essa parte e implementar o resto
-                    tree.add_child(TreeNode::new(&node_item.value));
-                }
-            },
-            "ARRAY" => {
-                if let Some(node_item) = list_iter.next() { 
-                    if node_item.value == "[" {
-                        tree.add_child(TreeNode::new("["));
-                        tree.add_child(TreeNode::new("]"));
-                        
-                        list_iter.next();
-
-                        tree.add_child(TreeNode::new("ARRAY"));
-                        give_grammatical_structure(&mut tree.children[2], list_iter);
-                    } else {
-                        tree.add_child(TreeNode::new(EPSLON));
-                        return;
-                    }
-                }
-            },
             "VALUE" => {
                 while let Some(node_item) = list_iter.next() { // Isso é apenas um stop do processamento, basta remover essa parte e implementar o resto
                     tree.add_child(TreeNode::new(&node_item.value));
@@ -358,12 +340,420 @@ fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list_iter: &mut 
                     }
                 }
             },
-            "INSTANCE" => {
+            "ARRAY" => {
                 if let Some(node_item) = list_iter.next() { 
-                    if node_item.value == "abstract" || node_item.value == "concrete" {
-                        tree.add_child(TreeNode::new(&node_item.value));
-                    } 
+                    if node_item.value == "[" {
+                        tree.add_child(TreeNode::new("["));
+                        tree.add_child(TreeNode::new("]"));
+                        
+                        list_iter.next();
+
+                        tree.add_child(TreeNode::new("ARRAY"));
+                        give_grammatical_structure(&mut tree.children[2], list_iter);
+                    } else {
+                        tree.add_child(TreeNode::new(EPSLON));
+                        return;
+                    }
                 }
+            },
+            "METHOD" => {                
+                tree.add_child(TreeNode::new("ID"));            
+                give_grammatical_structure(&mut tree.children[0], list_iter);
+
+                tree.add_child(TreeNode::new("("));
+
+                tree.add_child(TreeNode::new("INHERITANCE"));
+                give_grammatical_structure(&mut tree.children[2], list_iter);
+                
+                tree.add_child(TreeNode::new("ARGUMENT"));
+                give_grammatical_structure(&mut tree.children[3], list_iter);
+
+                tree.add_child(TreeNode::new(")"));
+
+                tree.add_child(TreeNode::new("BLOC_COM"));
+                give_grammatical_structure(&mut tree.children[5], list_iter);
+            },
+            "ARGUMENT" => {
+                tree.add_child(TreeNode::new("TYPE"));
+                give_grammatical_structure(&mut tree.children[0], list_iter);
+
+                tree.add_child(TreeNode::new("VAR"));
+                give_grammatical_structure(&mut tree.children[1], list_iter);
+
+                tree.add_child(TreeNode::new("ARG_LIST"));
+                give_grammatical_structure(&mut tree.children[2], list_iter);
+            },
+            "ARG_LIST" => {
+                if let Some(_) = list_iter.next(){
+                    tree.add_child(TreeNode::new(","));
+                
+                    tree.add_child(TreeNode::new("ARGUMENT"));
+                    give_grammatical_structure(&mut tree.children[1], list_iter);
+                }
+                else{
+                    tree.add_child(TreeNode::new(EPSLON));
+                    return;
+                }                    
+            },
+            "BLOC_COM" => {
+                tree.add_child(TreeNode::new("{"));
+
+                tree.add_child(TreeNode::new("COM_LIST"));
+                give_grammatical_structure(&mut tree.children[1], list_iter);
+
+                tree.add_child(TreeNode::new("}"));
+            },
+            "BLOC" => {
+                if let Some(node_item) = list_iter.next(){
+                    if node_item.value == "BLOC_COM" {
+
+                        tree.add_child(TreeNode::new("COM_LIST"));
+                        give_grammatical_structure(&mut tree.children[0], list_iter);
+
+                    }else if node_item.value == "COMMAND"{
+
+                        tree.add_child(TreeNode::new("COM_LIST"));
+                        give_grammatical_structure(&mut tree.children[0], list_iter);
+
+                        tree.add_child(TreeNode::new(";"));
+                    }
+                }
+            },
+            "COM_LIST" => {
+                if let Some(_) = list_iter.next(){
+                    tree.add_child(TreeNode::new("COMMAND"));
+                    give_grammatical_structure(&mut tree.children[0], list_iter);
+
+                    tree.add_child(TreeNode::new("COM_LIST"));
+                    give_grammatical_structure(&mut tree.children[1], list_iter);
+                }else{
+                    tree.add_child(TreeNode::new(EPSLON));
+                    return;
+                }
+            },
+            "COMMAND" => {
+            if let Some(node_item) = list_iter.next(){
+                if node_item.value == "ATRIB"{
+                    tree.add_child(TreeNode::new("ATRIB"));
+                    give_grammatical_structure(&mut tree.children[0], list_iter);
+
+                    tree.add_child(TreeNode::new(";"));
+                }else if node_item.value == "while"{
+                    tree.add_child(TreeNode::new("while"));
+
+                    tree.add_child(TreeNode::new("("));
+
+                    tree.add_child(TreeNode::new("EXP_LOGIC"));
+                    give_grammatical_structure(&mut tree.children[2], list_iter);
+
+                    tree.add_child(TreeNode::new(")"));
+
+                    tree.add_child(TreeNode::new("BLOC"));
+                    give_grammatical_structure(&mut tree.children[4], list_iter);
+
+                }else if node_item.value == "do"{
+                    tree.add_child(TreeNode::new("do"));
+
+                    tree.add_child(TreeNode::new("BLOC"));
+                    give_grammatical_structure(&mut tree.children[1], list_iter);
+
+                    tree.add_child(TreeNode::new("while"));
+
+                    tree.add_child(TreeNode::new("("));
+
+                    tree.add_child(TreeNode::new("EXP_LOGIC"));
+                    give_grammatical_structure(&mut tree.children[4], list_iter);
+
+                    tree.add_child(TreeNode::new(")"));
+
+                    tree.add_child(TreeNode::new(";"));
+
+                }else if node_item.value == "if"{
+                    tree.add_child(TreeNode::new("if"));
+
+                    tree.add_child(TreeNode::new("("));
+
+                    tree.add_child(TreeNode::new("EXP_LOGIC"));
+                    give_grammatical_structure(&mut tree.children[2], list_iter);
+
+                    tree.add_child(TreeNode::new(")"));                   
+
+                    tree.add_child(TreeNode::new("BLOC"));
+                    give_grammatical_structure(&mut tree.children[4], list_iter);
+
+                    tree.add_child(TreeNode::new("ELSE"));
+                    give_grammatical_structure(&mut tree.children[5], list_iter);
+
+                }else if node_item.value == "for"{
+                    tree.add_child(TreeNode::new("for"));
+
+                    tree.add_child(TreeNode::new("("));
+
+                    tree.add_child(TreeNode::new("EXP_LOGIC"));
+                    give_grammatical_structure(&mut tree.children[2], list_iter);
+
+                    tree.add_child(TreeNode::new(")"));                   
+
+                    tree.add_child(TreeNode::new("BLOC"));
+                    give_grammatical_structure(&mut tree.children[4], list_iter);
+
+                }else if node_item.value == "switch"{
+                    tree.add_child(TreeNode::new("switch"));
+
+                    tree.add_child(TreeNode::new("("));
+
+                    tree.add_child(TreeNode::new("ID"));
+                    give_grammatical_structure(&mut tree.children[2], list_iter);
+
+                    tree.add_child(TreeNode::new("NOME"));
+                    give_grammatical_structure(&mut tree.children[3], list_iter);
+
+                    tree.add_child(TreeNode::new(")"));
+
+                    tree.add_child(TreeNode::new("{"));          
+
+                    tree.add_child(TreeNode::new("SWITCH_CASE"));
+                    give_grammatical_structure(&mut tree.children[6], list_iter);
+                    
+                    tree.add_child(TreeNode::new("}"));   
+                }else if node_item.value == "break"{
+                    tree.add_child(TreeNode::new("break"));
+
+                    tree.add_child(TreeNode::new(";"));
+
+                }else if node_item.value == "continue"{
+                    tree.add_child(TreeNode::new("continue"));
+
+                    tree.add_child(TreeNode::new(";"));
+
+                }else if node_item.value == "return"{
+                    tree.add_child(TreeNode::new("break"));
+
+                    tree.add_child(TreeNode::new("EXP"));
+                    give_grammatical_structure(&mut tree.children[1], list_iter);
+
+                    tree.add_child(TreeNode::new(";"));
+                }
+            }
+            },
+            "ATRIB" => {
+                tree.add_child(TreeNode::new("ID"));
+                give_grammatical_structure(&mut tree.children[0], list_iter);
+
+                tree.add_child(TreeNode::new("NAME"));
+                give_grammatical_structure(&mut tree.children[1], list_iter);
+
+                tree.add_child(TreeNode::new("="));
+
+                tree.add_child(TreeNode::new("EXP"));
+                give_grammatical_structure(&mut tree.children[3], list_iter);
+            },
+            "ELSE" => {
+                if let Some(_) = list_iter.next(){
+                    tree.add_child(TreeNode::new("else"));
+
+                    tree.add_child(TreeNode::new("BLOC"));
+                    give_grammatical_structure(&mut tree.children[1], list_iter);
+
+                }else{
+                    tree.add_child(TreeNode::new(EPSLON));
+                    return;
+                }
+            },
+            "FOR_EXP" => {
+                if let Some(node_item) = list_iter.next(){
+                    if node_item.value == "DECL_VAR" {
+                        tree.add_child(TreeNode::new("DECL_VAR"));
+                        give_grammatical_structure(&mut tree.children[0], list_iter);
+
+                        tree.add_child(TreeNode::new(";"));
+
+                        tree.add_child(TreeNode::new("EXP_LOGIC"));
+                        give_grammatical_structure(&mut tree.children[2], list_iter);
+
+                        tree.add_child(TreeNode::new(";"));
+
+                        tree.add_child(TreeNode::new("ATRIB"));
+                        give_grammatical_structure(&mut tree.children[4], list_iter);
+                    }else if node_item.value == "TYPE"{
+                        tree.add_child(TreeNode::new("TYPE"));
+                        give_grammatical_structure(&mut tree.children[0], list_iter);
+
+                        tree.add_child(TreeNode::new("ID"));
+                        give_grammatical_structure(&mut tree.children[1], list_iter);
+
+                        tree.add_child(TreeNode::new(":"));
+
+                        tree.add_child(TreeNode::new("ID"));
+                        give_grammatical_structure(&mut tree.children[3], list_iter);
+
+                        tree.add_child(TreeNode::new("NAME"));
+                        give_grammatical_structure(&mut tree.children[4], list_iter);
+                    }
+                }
+            },
+            "SWITCH_CASE" => {
+                if let Some(node_item) = list_iter.next(){
+                    if node_item.value == "case" {
+                        tree.add_child(TreeNode::new("case"));
+
+                        tree.add_child(TreeNode::new("CONST"));
+                        give_grammatical_structure(&mut tree.children[1], list_iter);
+
+                        tree.add_child(TreeNode::new(":"));
+
+                        tree.add_child(TreeNode::new("BLOC"));
+                        give_grammatical_structure(&mut tree.children[3], list_iter);
+
+                        tree.add_child(TreeNode::new("SWITCH_CASE"));
+                        give_grammatical_structure(&mut tree.children[4], list_iter);
+                    }else if node_item.value == "default"{
+                        tree.add_child(TreeNode::new("case"));
+
+                        tree.add_child(TreeNode::new("BLOC"));
+                        give_grammatical_structure(&mut tree.children[1], list_iter);
+                    }
+                }
+            },
+            "EXP" => {
+                if let Some(node_item) = list_iter.next(){
+                    if node_item.value == "case" {
+
+                        tree.add_child(TreeNode::new("EXP_MATH"));
+                        give_grammatical_structure(&mut tree.children[0], list_iter);
+
+                    } else if node_item.value == "case" {
+
+                        tree.add_child(TreeNode::new("EXP_LOGIC"));
+                        give_grammatical_structure(&mut tree.children[0], list_iter);
+
+                    } else if node_item.value == "case" {
+
+                        tree.add_child(TreeNode::new("OPERATOR"));
+                        give_grammatical_structure(&mut tree.children[0], list_iter);
+
+                        tree.add_child(TreeNode::new("ID"));
+                        give_grammatical_structure(&mut tree.children[1], list_iter);
+
+                        tree.add_child(TreeNode::new("NAME"));
+                        give_grammatical_structure(&mut tree.children[2], list_iter);
+                        
+                    }else if node_item.value == "case" {
+                        
+                        tree.add_child(TreeNode::new("new"));
+
+                        tree.add_child(TreeNode::new("TYPE"));
+                        give_grammatical_structure(&mut tree.children[1], list_iter);
+
+                        tree.add_child(TreeNode::new("NAME"));
+                        give_grammatical_structure(&mut tree.children[2], list_iter);
+
+                    }
+                }
+                
+            },
+            "OPERATOR" => {
+                if let Some(node_item) = list_iter.next() { 
+                    if node_item.value == "++" || node_item.value == "--" {
+                        tree.add_child(TreeNode::new(&node_item.value));
+                    }
+                }
+            },
+            "PARAMS" => {
+                if let Some(_) = list_iter.next(){
+                    tree.add_child(TreeNode::new("PARAM"));
+                    give_grammatical_structure(&mut tree.children[0], list_iter);
+
+                    tree.add_child(TreeNode::new("PARAM_LIST"));
+                    give_grammatical_structure(&mut tree.children[1], list_iter);
+                }else{
+                    tree.add_child(TreeNode::new(EPSLON));
+                    return;
+                }
+            },
+            "PARAM_LIST" => {
+                if let Some(_) = list_iter.next(){
+                    tree.add_child(TreeNode::new(","));
+
+                    tree.add_child(TreeNode::new("PARAM"));
+                    give_grammatical_structure(&mut tree.children[1], list_iter);
+
+                    tree.add_child(TreeNode::new("PARAM_LIST"));
+                    give_grammatical_structure(&mut tree.children[2], list_iter);
+                }else{
+                    tree.add_child(TreeNode::new(EPSLON));
+                    return;
+                }
+            },
+            "EXP_LOGIC" => {
+            },
+            "EXP_MATH" => {
+                !
+            },
+            "OP_LOGIC" => {
+                if let Some(node_item) = list_iter.next() { 
+                    if node_item.value == ">" || node_item.value == "<" || node_item.value == ">=" || node_item.value == "<=" || node_item.value == "==" || node_item.value == "!=" {
+                        tree.add_child(TreeNode::new(&node_item.value));
+                    }
+                }
+            },
+            "OP_MATH" => { 
+                if let Some(node_item) = list_iter.next(){
+                    let teste = list_iter.next().next();
+                    if node_item.value == "+" || node_item.value == "-" || node_item.value == "*" || node_item.value == "/" {
+                        tree.add_child(TreeNode::new(&node_item.value));
+                    }
+                }
+            },
+            "PARAM" => {
+                !
+            },
+            "ARRAY_SIZE" => {
+                if let Some(_) = list_iter.next(){
+                    tree.add_child(TreeNode::new("["));
+
+                    tree.add_child(TreeNode::new("EXP_MATH"));
+                    give_grammatical_structure(&mut tree.children[1], list_iter);
+
+                    tree.add_child(TreeNode::new("]"));
+
+                    tree.add_child(TreeNode::new("ARRAY_SIZE"));
+                    give_grammatical_structure(&mut tree.children[3], list_iter);
+                }else{
+                    tree.add_child(TreeNode::new(EPSLON));
+                    return;
+                }
+            },
+            "NAME" => {
+                while let Some(node_item) = list_iter.next() { // Isso é apenas um stop do processamento, basta remover essa parte e implementar o resto
+                    tree.add_child(TreeNode::new(&node_item.value));
+                }
+            },
+            "FIELD" => {
+                if let Some(_) = list_iter.next(){
+                    tree.add_child(TreeNode::new("."));
+
+                    tree.add_child(TreeNode::new("ID"));
+                    give_grammatical_structure(&mut tree.children[1], list_iter);
+
+                    tree.add_child(TreeNode::new("NAME"));
+                    give_grammatical_structure(&mut tree.children[2], list_iter);
+                }else{
+                    tree.add_child(TreeNode::new(EPSLON));
+                    return;
+                }
+            },
+            "CONST" => {
+                !
+            },
+            "ID" => {
+                if let Some(node_item) = list_iter.next() { 
+                    tree.add_child(TreeNode::new(&node_item.value));
+                    return;
+                }
+            },
+            "NUMBER" => {
+                !
             }
             _ => tree.add_child(TreeNode::new(EPSLON)),
         }
