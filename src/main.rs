@@ -146,7 +146,6 @@ fn print_linked_list(list: &LinkedList<Node>) {
 // fn give_grammatical_structure(tree: &mut TreeNode<&str>, list: &LinkedList<Node>) {
 // fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list: &'a LinkedList<Node>) {
 fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list_iter: &mut std::collections::linked_list::IterMut<'a, Node>) {
-    tree.list();
         match tree.value {
             "PROGRAM" => {
                 tree.add_child(TreeNode::new("DECLARATION"));
@@ -216,9 +215,9 @@ fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list_iter: &mut 
                 }
             },
             "ITEM_DECLS" => { //[VISIBILITY] [SCOPE] [FINAL] [ITEM_DECL] (;) [ITEM_DECLS]
-                if let Some(_) = list_iter.next(){
+                if let Some(node_item) = list_iter.next(){
                     tree.add_child(TreeNode::new("VISIBILITY"));
-                    give_grammatical_structure(&mut tree.children[0], list_iter);
+                    tree.children[0].add_child(TreeNode::new(&node_item.value));
                     
                     tree.add_child(TreeNode::new("SCOPE"));
                     give_grammatical_structure(&mut tree.children[1], list_iter);
@@ -263,10 +262,30 @@ fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list_iter: &mut 
             "ITEM_DECL" => { // [ATRIB_DECL] | [METHOD_DECL]
                 // É necessária implementar a lógica para pegar ATRIB ou METHOD DECL    
                 if let Some(node_item) = list_iter.next() {
-                    println!("{}",node_item.value);
-                    if node_item.value == "ATRIB_DECL" || node_item.value == "METHOD_DECL" {
-                        tree.add_child(TreeNode::new(&node_item.value));
-                    } 
+                    if node_item.value == "int" || node_item.value == "float" || node_item.value == "double" || node_item.value == "char" || node_item.value == "void" {
+                        tree.add_child(TreeNode::new("ATRIB_DECL"));
+                        tree.children[0].add_child(TreeNode::new("TYPE"));
+                        tree.children[0].children[0].add_child(TreeNode::new(&node_item.value));
+
+                        tree.children[0].add_child(TreeNode::new("VAR"));
+                        give_grammatical_structure(&mut tree.children[0].children[1], list_iter);
+
+                        tree.children[0].add_child(TreeNode::new("VAR_LIST"));
+                        give_grammatical_structure(&mut tree.children[0].children[2], list_iter);
+
+                        tree.children[0].add_child(TreeNode::new(";"));
+                        list_iter.next();
+                    } else if node_item.value == "abstract" || node_item.value == "concrete" {
+                        tree.add_child(TreeNode::new("METHOD_DECL"));
+                        tree.children[0].add_child(TreeNode::new("INSTANCE"));
+                        tree.children[0].children[0].add_child(TreeNode::new(&node_item.value));
+
+                        tree.children[0].add_child(TreeNode::new("TYPE"));
+                        give_grammatical_structure(&mut tree.children[0].children[1], list_iter);
+
+                        tree.children[0].add_child(TreeNode::new("METHOD"));
+                        give_grammatical_structure(&mut tree.children[0].children[2], list_iter);
+                    }
                 }
             },
             "ATRIB_DECL" => { // [TYPE] [VAR] [VAR_LIST] (;)
@@ -309,6 +328,18 @@ fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list_iter: &mut 
                 tree.add_child(TreeNode::new("ID"));
                 give_grammatical_structure(&mut tree.children[0], list_iter);
 
+                if let Some(node_item) = list_iter.next() { 
+                    if node_item.value == "[" {
+                        tree.add_child(TreeNode::new("ARRAY"));
+                        tree.children[0].add_child(TreeNode::new(&node_item.value));
+
+                        list_iter.next();
+                        tree.children[0].add_child(TreeNode::new(&node_item.value));
+
+                        tree.add_child(TreeNode::new("ARRAY"));
+
+                    }
+                }
                 tree.add_child(TreeNode::new("ARRAY"));
                 give_grammatical_structure(&mut tree.children[1], list_iter);
 
@@ -343,20 +374,19 @@ fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list_iter: &mut 
                 }
             },
             "ARRAY" => {
-                if let Some(node_item) = list_iter.next() { 
-                    if node_item.value == "[" {
-                        tree.add_child(TreeNode::new("["));
-                        tree.add_child(TreeNode::new("]"));
-                        
-                        list_iter.next();
+                // if node_item.value == "[" {
+                //     tree.add_child(TreeNode::new("["));
+                //     tree.add_child(TreeNode::new("]"));
+                    
+                //     list_iter.next();
 
-                        tree.add_child(TreeNode::new("ARRAY"));
-                        give_grammatical_structure(&mut tree.children[2], list_iter);
-                    } else {
-                        tree.add_child(TreeNode::new(EPSLON));
-                        return;
-                    }
-                }
+                //     tree.add_child(TreeNode::new("ARRAY"));
+                //     give_grammatical_structure(&mut tree.children[2], list_iter);
+                // } else {
+                //     tree.add_child(TreeNode::new(EPSLON));
+                //     return;
+                // }
+                return;
             },
             "METHOD" => {                
                 tree.add_child(TreeNode::new("ID"));            
@@ -838,8 +868,56 @@ fn give_grammatical_structure<'a>(tree: &mut TreeNode<&'a str>, list_iter: &mut 
         }
 }
 
+fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) {
+    match tree.value {
+        "PROGRAM" => {
+            tree.add_child(TreeNode::new("DECLARATION"));
+            ggsv(&mut tree.children[0], list, index);
+
+            tree.add_child(TreeNode::new("DECLARATIONS"));
+            ggsv(&mut tree.children[1], list, index);
+        }
+        "DECLARATION" => {
+            tree.add_child(TreeNode::new("STRUCT"));
+            ggsv(&mut tree.children[0], list, index);
+            
+            tree.add_child(TreeNode::new("ID"));            
+            ggsv(&mut tree.children[1], list, index+1);
+
+            tree.add_child(TreeNode::new("INHERITANCE"));
+            ggsv(&mut tree.children[2], list, index+2);
+
+            tree.add_child(TreeNode::new("{"));
+
+            tree.add_child(TreeNode::new("ITEM_DECLS"));
+            ggsv(&mut tree.children[4], list, index+4);
+
+            tree.add_child(TreeNode::new("}"));
+        },
+        "DECLARATIONS" => {
+            if list.len() >= index {
+                tree.add_child(TreeNode::new("DECLARATION"));
+                ggsv(&mut tree.children[0], list, index);
+
+                tree.add_child(TreeNode::new("DECLARATIONS"));
+                ggsv(&mut tree.children[1], list, index+1);   
+            } else {
+                tree.add_child(TreeNode::new("ε"));
+                return;
+            }
+        },
+        "STRUCT" => {
+            if list.len() > index {
+                tree.add_child(TreeNode::new(&list[index].value));
+            }
+        },
+        _ => tree.add_child(TreeNode::new(EPSLON)),
+    }
+}
+
 fn main() -> std::io::Result<()> {
-    let mut list: LinkedList<Node> = LinkedList::new();
+    // let mut list: LinkedList<Node> = LinkedList::new();
+    let mut list = vec![];
     
     let contents = read_file("./test.jaca")?; 
 
@@ -854,16 +932,17 @@ fn main() -> std::io::Result<()> {
     for value in parsed_strings {
         // Classificando valores no tipo de token
         let token = classificate_value(value);
-
-        list.push_back(Node {
+        list.push(Node {
             value: value.to_string(),
             token
         });
     }
 
-    let mut list_iter = list.iter_mut();
+    let test = &list[2];
+
+    // let mut list_iter = list.iter_mut();
     // Chama a função para iniciar a análise gramatical
-    give_grammatical_structure(&mut tree, &mut list_iter);
+    ggsv(&mut tree, &list, 0);
     tree.list();
 
     // print_linked_list(&list);
