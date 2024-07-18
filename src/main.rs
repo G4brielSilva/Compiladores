@@ -193,16 +193,16 @@ fn classificate_value(value: &str) -> Token {
 //                 }
 //             },
 //             "INSTANCE" => {
-//                 if let Some(node_item) = list_iter.next() { 
-//                     if node_item.value == "abstract" || node_item.value == "concrete" {
-//                         tree.add_child(TreeNode::new(&node_item.value));
+//                 if let Some(list[index]) = list_iter.next() { 
+//                     if list[index].value == "abstract" || list[index].value == "concrete" {
+//                         tree.add_child(TreeNode::new(&list[index].value));
 //                     } 
 //                 }
 //             },
 //             "INHERITANCE" => {
-//                 if let Some(node_item) = list_iter.next() { 
-//                     if node_item.value == "extends" || node_item.value == "implements"{
-//                         tree.add_child(TreeNode::new(&node_item.value));
+//                 if let Some(list[index]) = list_iter.next() { 
+//                     if list[index].value == "extends" || list[index].value == "implements"{
+//                         tree.add_child(TreeNode::new(&list[index].value));
 //                         tree.add_child(TreeNode::new("ID"));
 //                         give_grammatical_structure(&mut tree.children[1], list_iter);
 //                     } else {
@@ -211,9 +211,9 @@ fn classificate_value(value: &str) -> Token {
 //                 }
 //             },
 //             "ITEM_DECLS" => { //[VISIBILITY] [SCOPE] [FINAL] [ITEM_DECL] (;) [ITEM_DECLS]
-//                 if let Some(node_item) = list_iter.next(){
+//                 if let Some(list[index]) = list_iter.next(){
 //                     tree.add_child(TreeNode::new("VISIBILITY"));
-//                     tree.children[0].add_child(TreeNode::new(&node_item.value));
+//                     tree.children[0].add_child(TreeNode::new(&list[index].value));
                     
 //                     tree.add_child(TreeNode::new("SCOPE"));
 //                     give_grammatical_structure(&mut tree.children[1], list_iter);
@@ -235,33 +235,33 @@ fn classificate_value(value: &str) -> Token {
                 
 //             },
 //             "VISIBILITY" => { // (public) | (protected) | (private)
-//                 if let Some(node_item) = list_iter.next() { 
-//                     if node_item.value == "public" || node_item.value == "protected" || node_item.value == "private" {
-//                         tree.add_child(TreeNode::new(&node_item.value));
+//                 if let Some(list[index]) = list_iter.next() { 
+//                     if list[index].value == "public" || list[index].value == "protected" || list[index].value == "private" {
+//                         tree.add_child(TreeNode::new(&list[index].value));
 //                     }
 //                 }
 //             },
 //             "SCOPE" => { // (static) | (local)
-//                 if let Some(node_item) = list_iter.next() { 
-//                     if node_item.value == "static" || node_item.value == "local" {
-//                         tree.add_child(TreeNode::new(&node_item.value));
+//                 if let Some(list[index]) = list_iter.next() { 
+//                     if list[index].value == "static" || list[index].value == "local" {
+//                         tree.add_child(TreeNode::new(&list[index].value));
 //                     }
 //                 }
 //             },
 //             "FINAL" => { // (final) | (base)
-//                 if let Some(node_item) = list_iter.next() {
-//                     if node_item.value == "final" || node_item.value == "base" {
-//                         tree.add_child(TreeNode::new(&node_item.value));
+//                 if let Some(list[index]) = list_iter.next() {
+//                     if list[index].value == "final" || list[index].value == "base" {
+//                         tree.add_child(TreeNode::new(&list[index].value));
 //                     }
 //                 }
 //             },
 //             "ITEM_DECL" => { // [ATRIB_DECL] | [METHOD_DECL]
 //                 // É necessária implementar a lógica para pegar ATRIB ou METHOD DECL    
-//                 if let Some(node_item) = list_iter.next() {
-//                     if node_item.value == "int" || node_item.value == "float" || node_item.value == "double" || node_item.value == "char" || node_item.value == "void" {
+//                 if let Some(list[index]) = list_iter.next() {
+//                     if list[index].value == "int" || list[index].value == "float" || list[index].value == "double" || list[index].value == "char" || list[index].value == "void" {
 //                         tree.add_child(TreeNode::new("ATRIB_DECL"));
 //                         tree.children[0].add_child(TreeNode::new("TYPE"));
-//                         tree.children[0].children[0].add_child(TreeNode::new(&node_item.value));
+//                         tree.children[0].children[0].add_child(TreeNode::new(&list[index].value));
 
 //                         tree.children[0].add_child(TreeNode::new("VAR"));
 //                         give_grammatical_structure(&mut tree.children[0].children[1], list_iter);
@@ -271,10 +271,10 @@ fn classificate_value(value: &str) -> Token {
 
 //                         tree.children[0].add_child(TreeNode::new(";"));
 //                         list_iter.next();
-//                     } else if node_item.value == "abstract" || node_item.value == "concrete" {
+//                     } else if list[index].value == "abstract" || list[index].value == "concrete" {
 //                         tree.add_child(TreeNode::new("METHOD_DECL"));
 //                         tree.children[0].add_child(TreeNode::new("INSTANCE"));
-//                         tree.children[0].children[0].add_child(TreeNode::new(&node_item.value));
+//                         tree.children[0].children[0].add_child(TreeNode::new(&list[index].value));
 
 //                         tree.children[0].add_child(TreeNode::new("TYPE"));
 //                         give_grammatical_structure(&mut tree.children[0].children[1], list_iter);
@@ -308,12 +308,12 @@ fn classificate_value(value: &str) -> Token {
 //                 give_grammatical_structure(&mut tree.children[2], list_iter);
 //             },
 //             "TYPE" => {
-//                 if let Some(node_item) = list_iter.next() { 
-//                     if node_item.value == "int" || node_item.value == "float" || node_item.value == "double" || node_item.value == "char" || node_item.value == "void" {
-//                         tree.add_child(TreeNode::new(&node_item.value));
+//                 if let Some(list[index]) = list_iter.next() { 
+//                     if list[index].value == "int" || list[index].value == "float" || list[index].value == "double" || list[index].value == "char" || list[index].value == "void" {
+//                         tree.add_child(TreeNode::new(&list[index].value));
 //                     } else {
 //                         tree.add_child(TreeNode::new("ID"));
-//                         tree.add_child(TreeNode::new(&node_item.value));
+//                         tree.add_child(TreeNode::new(&list[index].value));
 
 //                         tree.add_child(TreeNode::new("NAME"));
 //                         give_grammatical_structure(&mut tree.children[2], list_iter);
@@ -324,13 +324,13 @@ fn classificate_value(value: &str) -> Token {
 //                 tree.add_child(TreeNode::new("ID"));
 //                 give_grammatical_structure(&mut tree.children[0], list_iter);
 
-//                 if let Some(node_item) = list_iter.next() { 
-//                     if node_item.value == "[" {
+//                 if let Some(list[index]) = list_iter.next() { 
+//                     if list[index].value == "[" {
 //                         tree.add_child(TreeNode::new("ARRAY"));
-//                         tree.children[0].add_child(TreeNode::new(&node_item.value));
+//                         tree.children[0].add_child(TreeNode::new(&list[index].value));
 
 //                         list_iter.next();
-//                         tree.children[0].add_child(TreeNode::new(&node_item.value));
+//                         tree.children[0].add_child(TreeNode::new(&list[index].value));
 
 //                         tree.add_child(TreeNode::new("ARRAY"));
 
@@ -345,8 +345,8 @@ fn classificate_value(value: &str) -> Token {
 //                 tree.add_child(TreeNode::new(";"));
 //             },
 //             "VALUE" => {
-//                 if let Some(node_item) = list_iter.next() { 
-//                     if node_item.value == "=" {
+//                 if let Some(list[index]) = list_iter.next() { 
+//                     if list[index].value == "=" {
 //                         tree.add_child(TreeNode::new("="));
 //                         tree.add_child(TreeNode::new("EXP"));
                         
@@ -355,8 +355,8 @@ fn classificate_value(value: &str) -> Token {
 //                 }
 //             },
 //             "VAR_LIST" => {
-//                 if let Some(node_item) = list_iter.next() { 
-//                     if node_item.value == "," {
+//                 if let Some(list[index]) = list_iter.next() { 
+//                     if list[index].value == "," {
 //                         tree.add_child(TreeNode::new(","));
 //                         tree.add_child(TreeNode::new("VAR"));
 //                         give_grammatical_structure(&mut tree.children[1], list_iter);
@@ -370,7 +370,7 @@ fn classificate_value(value: &str) -> Token {
 //                 }
 //             },
 //             "ARRAY" => {
-//                 // if node_item.value == "[" {
+//                 // if list[index].value == "[" {
 //                 //     tree.add_child(TreeNode::new("["));
 //                 //     tree.add_child(TreeNode::new("]"));
                     
@@ -432,13 +432,13 @@ fn classificate_value(value: &str) -> Token {
 //                 tree.add_child(TreeNode::new("}"));
 //             },
 //             "BLOC" => {
-//                 if let Some(node_item) = list_iter.next(){
-//                     if node_item.value == "BLOC_COM" {
+//                 if let Some(list[index]) = list_iter.next(){
+//                     if list[index].value == "BLOC_COM" {
 
 //                         tree.add_child(TreeNode::new("COM_LIST"));
 //                         give_grammatical_structure(&mut tree.children[0], list_iter);
 
-//                     }else if node_item.value == "COMMAND"{
+//                     }else if list[index].value == "COMMAND"{
 
 //                         tree.add_child(TreeNode::new("COM_LIST"));
 //                         give_grammatical_structure(&mut tree.children[0], list_iter);
@@ -460,16 +460,16 @@ fn classificate_value(value: &str) -> Token {
 //                 }
 //             },
             // "INSTANCE" => {
-            //     if let Some(node_item) = list_node.next() { 
-            //         if node_item.value == "abstract" || node_item.value == "concrete" {
-            //             tree.add_child(TreeNode::new(&node_item.value));
+            //     if let Some(list[index]) = list_node.next() { 
+            //         if list[index].value == "abstract" || list[index].value == "concrete" {
+            //             tree.add_child(TreeNode::new(&list[index].value));
             //         } 
             //     }
             // },
             // "INHERITANCE" => {
-            //     if let Some(node_item) = list_node.next() { 
-            //         if node_item.value == "extends" || node_item.value == "implements"{
-            //             tree.add_child(TreeNode::new(&node_item.value));
+            //     if let Some(list[index]) = list_node.next() { 
+            //         if list[index].value == "extends" || list[index].value == "implements"{
+            //             tree.add_child(TreeNode::new(&list[index].value));
             //             tree.add_child(TreeNode::new("ID"));
             //             give_grammatical_structure(&mut tree.children[1], list_node);
             //         } else {
@@ -502,32 +502,32 @@ fn classificate_value(value: &str) -> Token {
                 
             // },
             // "VISIBILITY" => { // (public) | (protected) | (private)
-            //     if let Some(node_item) = list_node.next() { 
-            //         if node_item.value == "public" || node_item.value == "protected" || node_item.value == "private" {
-            //             tree.add_child(TreeNode::new(&node_item.value));
+            //     if let Some(list[index]) = list_node.next() { 
+            //         if list[index].value == "public" || list[index].value == "protected" || list[index].value == "private" {
+            //             tree.add_child(TreeNode::new(&list[index].value));
             //         }
             //     }
             // },
             // "SCOPE" => { // (static) | (local)
-            //     if let Some(node_item) = list_node.next() { 
-            //         if node_item.value == "static" || node_item.value == "local" {
-            //             tree.add_child(TreeNode::new(&node_item.value));
+            //     if let Some(list[index]) = list_node.next() { 
+            //         if list[index].value == "static" || list[index].value == "local" {
+            //             tree.add_child(TreeNode::new(&list[index].value));
             //         }
             //     }
             // },
             // "FINAL" => { // (final) | (base)
-            //     if let Some(node_item) = list_node.next() {
-            //         if node_item.value == "final" || node_item.value == "base" {
-            //             tree.add_child(TreeNode::new(&node_item.value));
+            //     if let Some(list[index]) = list_node.next() {
+            //         if list[index].value == "final" || list[index].value == "base" {
+            //             tree.add_child(TreeNode::new(&list[index].value));
             //         }
             //     }
             // },
             // "ITEM_DECL" => { // [ATRIB_DECL] | [METHOD_DECL]
             //     // É necessária implementar a lógica para pegar ATRIB ou METHOD DECL    
-            //     if let Some(node_item) = list_node.next() {
-            //         println!("{}",node_item.value);
-            //         if node_item.value == "ATRIB_DECL" || node_item.value == "METHOD_DECL" {
-            //             tree.add_child(TreeNode::new(&node_item.value));
+            //     if let Some(list[index]) = list_node.next() {
+            //         println!("{}",list[index].value);
+            //         if list[index].value == "ATRIB_DECL" || list[index].value == "METHOD_DECL" {
+            //             tree.add_child(TreeNode::new(&list[index].value));
             //         } 
             //     }
             // },
@@ -555,12 +555,12 @@ fn classificate_value(value: &str) -> Token {
             //     give_grammatical_structure(&mut tree.children[2], list_node);
             // },
             // "TYPE" => {
-            //     if let Some(node_item) = list_node.next() { 
-            //         if node_item.value == "int" || node_item.value == "float" || node_item.value == "double" || node_item.value == "char" || node_item.value == "void" {
-            //             tree.add_child(TreeNode::new(&node_item.value));
+            //     if let Some(list[index]) = list_node.next() { 
+            //         if list[index].value == "int" || list[index].value == "float" || list[index].value == "double" || list[index].value == "char" || list[index].value == "void" {
+            //             tree.add_child(TreeNode::new(&list[index].value));
             //         } else {
             //             tree.add_child(TreeNode::new("ID"));
-            //             tree.add_child(TreeNode::new(&node_item.value));
+            //             tree.add_child(TreeNode::new(&list[index].value));
 
             //             tree.add_child(TreeNode::new("NAME"));
             //             give_grammatical_structure(&mut tree.children[2], list_node);
@@ -580,8 +580,8 @@ fn classificate_value(value: &str) -> Token {
             //     tree.add_child(TreeNode::new(";"));
             // },
             // "VALUE" => {
-            //     if let Some(node_item) = list_node.next() { 
-            //         if node_item.value == "=" {
+            //     if let Some(list[index]) = list_node.next() { 
+            //         if list[index].value == "=" {
             //             tree.add_child(TreeNode::new("="));
             //             tree.add_child(TreeNode::new("EXP"));
                         
@@ -590,8 +590,8 @@ fn classificate_value(value: &str) -> Token {
             //     }
             // },
             // "VAR_LIST" => {
-            //     if let Some(node_item) = list_node.next() { 
-            //         if node_item.value == "," {
+            //     if let Some(list[index]) = list_node.next() { 
+            //         if list[index].value == "," {
             //             tree.add_child(TreeNode::new(","));
             //             tree.add_child(TreeNode::new("VAR"));
             //             give_grammatical_structure(&mut tree.children[1], list_node);
@@ -605,8 +605,8 @@ fn classificate_value(value: &str) -> Token {
             //     }
             // },
             // "ARRAY" => {
-            //     if let Some(node_item) = list_node.next() { 
-            //         if node_item.value == "[" {
+            //     if let Some(list[index]) = list_node.next() { 
+            //         if list[index].value == "[" {
             //             tree.add_child(TreeNode::new("["));
             //             tree.add_child(TreeNode::new("]"));
                         
@@ -668,13 +668,13 @@ fn classificate_value(value: &str) -> Token {
             //     tree.add_child(TreeNode::new("}"));
             // },
             // "BLOC" => {
-            //     if let Some(node_item) = list_node.next(){
-            //         if node_item.value == "BLOC_COM" {
+            //     if let Some(list[index]) = list_node.next(){
+            //         if list[index].value == "BLOC_COM" {
 
             //             tree.add_child(TreeNode::new("COM_LIST"));
             //             give_grammatical_structure(&mut tree.children[0], list_node);
 
-            //         }else if node_item.value == "COMMAND"{
+            //         }else if list[index].value == "COMMAND"{
 
             //             tree.add_child(TreeNode::new("COM_LIST"));
             //             give_grammatical_structure(&mut tree.children[0], list_node);
@@ -696,13 +696,13 @@ fn classificate_value(value: &str) -> Token {
             //     }
             // },
             // "COMMAND" => {
-            // if let Some(node_item) = list_node.next(){
-            //     if node_item.value == "ATRIB"{
+            // if let Some(list[index]) = list_node.next(){
+            //     if list[index].value == "ATRIB"{
             //         tree.add_child(TreeNode::new("ATRIB"));
             //         give_grammatical_structure(&mut tree.children[0], list_node);
 
             //         tree.add_child(TreeNode::new(";"));
-            //     }else if node_item.value == "while"{
+            //     }else if list[index].value == "while"{
             //         tree.add_child(TreeNode::new("while"));
 
             //         tree.add_child(TreeNode::new("("));
@@ -715,7 +715,7 @@ fn classificate_value(value: &str) -> Token {
             //         tree.add_child(TreeNode::new("BLOC"));
             //         give_grammatical_structure(&mut tree.children[4], list_node);
 
-            //     }else if node_item.value == "do"{
+            //     }else if list[index].value == "do"{
             //         tree.add_child(TreeNode::new("do"));
 
             //         tree.add_child(TreeNode::new("BLOC"));
@@ -732,7 +732,7 @@ fn classificate_value(value: &str) -> Token {
 
             //         tree.add_child(TreeNode::new(";"));
 
-            //     }else if node_item.value == "if"{
+            //     }else if list[index].value == "if"{
             //         tree.add_child(TreeNode::new("if"));
 
             //         tree.add_child(TreeNode::new("("));
@@ -748,7 +748,7 @@ fn classificate_value(value: &str) -> Token {
             //         tree.add_child(TreeNode::new("ELSE"));
             //         give_grammatical_structure(&mut tree.children[5], list_node);
 
-            //     }else if node_item.value == "for"{
+            //     }else if list[index].value == "for"{
             //         tree.add_child(TreeNode::new("for"));
 
             //         tree.add_child(TreeNode::new("("));
@@ -761,7 +761,7 @@ fn classificate_value(value: &str) -> Token {
             //         tree.add_child(TreeNode::new("BLOC"));
             //         give_grammatical_structure(&mut tree.children[4], list_node);
 
-            //     }else if node_item.value == "switch"{
+            //     }else if list[index].value == "switch"{
             //         tree.add_child(TreeNode::new("switch"));
 
             //         tree.add_child(TreeNode::new("("));
@@ -780,17 +780,17 @@ fn classificate_value(value: &str) -> Token {
             //         give_grammatical_structure(&mut tree.children[6], list_node);
                     
             //         tree.add_child(TreeNode::new("}"));   
-            //     }else if node_item.value == "break"{
+            //     }else if list[index].value == "break"{
             //         tree.add_child(TreeNode::new("break"));
 
             //         tree.add_child(TreeNode::new(";"));
 
-            //     }else if node_item.value == "continue"{
+            //     }else if list[index].value == "continue"{
             //         tree.add_child(TreeNode::new("continue"));
 
             //         tree.add_child(TreeNode::new(";"));
 
-            //     }else if node_item.value == "return"{
+            //     }else if list[index].value == "return"{
             //         tree.add_child(TreeNode::new("break"));
 
             //         tree.add_child(TreeNode::new("EXP"));
@@ -825,8 +825,8 @@ fn classificate_value(value: &str) -> Token {
             //     }
             // },
             // "FOR_EXP" => {
-            //     if let Some(node_item) = list_node.next(){
-            //         if node_item.value == "DECL_VAR" {
+            //     if let Some(list[index]) = list_node.next(){
+            //         if list[index].value == "DECL_VAR" {
             //             tree.add_child(TreeNode::new("DECL_VAR"));
             //             give_grammatical_structure(&mut tree.children[0], list_node);
 
@@ -839,7 +839,7 @@ fn classificate_value(value: &str) -> Token {
 
             //             tree.add_child(TreeNode::new("ATRIB"));
             //             give_grammatical_structure(&mut tree.children[4], list_node);
-            //         }else if node_item.value == "TYPE"{
+            //         }else if list[index].value == "TYPE"{
             //             tree.add_child(TreeNode::new("TYPE"));
             //             give_grammatical_structure(&mut tree.children[0], list_node);
 
@@ -857,8 +857,8 @@ fn classificate_value(value: &str) -> Token {
             //     }
             // },
             // "SWITCH_CASE" => {
-            //     if let Some(node_item) = list_node.next(){
-            //         if node_item.value == "case" {
+            //     if let Some(list[index]) = list_node.next(){
+            //         if list[index].value == "case" {
             //             tree.add_child(TreeNode::new("case"));
 
             //             tree.add_child(TreeNode::new("CONST"));
@@ -871,7 +871,7 @@ fn classificate_value(value: &str) -> Token {
 
             //             tree.add_child(TreeNode::new("SWITCH_CASE"));
             //             give_grammatical_structure(&mut tree.children[4], list_node);
-            //         }else if node_item.value == "default"{
+            //         }else if list[index].value == "default"{
             //             tree.add_child(TreeNode::new("case"));
 
             //             tree.add_child(TreeNode::new("BLOC"));
@@ -880,18 +880,18 @@ fn classificate_value(value: &str) -> Token {
             //     }
             // },
             // "EXP" => {
-            //     if let Some(node_item) = list_node.next(){
-            //         if node_item.value == "EXP_MATH" {
+            //     if let Some(list[index]) = list_node.next(){
+            //         if list[index].value == "EXP_MATH" {
 
             //             tree.add_child(TreeNode::new("EXP_MATH"));
             //             give_grammatical_structure(&mut tree.children[0], list_node);
 
-            //         } else if node_item.value == "EXP_LOGIC" {
+            //         } else if list[index].value == "EXP_LOGIC" {
 
             //             tree.add_child(TreeNode::new("EXP_LOGIC"));
             //             give_grammatical_structure(&mut tree.children[0], list_node);
 
-            //         } else if node_item.value == "OPERATOR" {
+            //         } else if list[index].value == "OPERATOR" {
 
             //             tree.add_child(TreeNode::new("OPERATOR"));
             //             give_grammatical_structure(&mut tree.children[0], list_node);
@@ -902,7 +902,7 @@ fn classificate_value(value: &str) -> Token {
             //             tree.add_child(TreeNode::new("NAME"));
             //             give_grammatical_structure(&mut tree.children[2], list_node);
                         
-            //         }else if node_item.value == "new" {
+            //         }else if list[index].value == "new" {
                         
             //             tree.add_child(TreeNode::new("new"));
 
@@ -917,9 +917,9 @@ fn classificate_value(value: &str) -> Token {
                 
             // },
             // "OPERATOR" => {
-            //     if let Some(node_item) = list_node.next() { 
-            //         if node_item.value == "++" || node_item.value == "--" {
-            //             tree.add_child(TreeNode::new(&node_item.value));
+            //     if let Some(list[index]) = list_node.next() { 
+            //         if list[index].value == "++" || list[index].value == "--" {
+            //             tree.add_child(TreeNode::new(&list[index].value));
             //         }
             //     }
             // },
@@ -953,10 +953,10 @@ fn classificate_value(value: &str) -> Token {
             //     tree.add_child(TreeNode::new("EXP"));
             //     give_grammatical_structure(&mut tree.children[0], list_node);
                 
-            //     if let Some(node_item) = list_node.next() {
-            //         if node_item.value == ">" || node_item.value == "<" || node_item.value == ">=" || node_item.value == "<=" || node_item.value == "==" || node_item.value == "!=" {
+            //     if let Some(list[index]) = list_node.next() {
+            //         if list[index].value == ">" || list[index].value == "<" || list[index].value == ">=" || list[index].value == "<=" || list[index].value == "==" || list[index].value == "!=" {
             //             tree.add_child(TreeNode::new("OP_LOGIC"));
-            //             tree.children[1].add_child(TreeNode::new(&node_item.value));
+            //             tree.children[1].add_child(TreeNode::new(&list[index].value));
             //             tree.add_child(TreeNode::new("EXP_LOGIC"));
             //         } else {
             //             tree.add_child(TreeNode::new(EPSLON));
@@ -968,25 +968,25 @@ fn classificate_value(value: &str) -> Token {
             //     tree.add_child(TreeNode::new("PARAM"));
             //     give_grammatical_structure(&mut tree.children[0], list_node);
                 
-            //     if let Some(node_item) = list_node.next() {
-            //         if node_item.value == "+" || node_item.value == "-" || node_item.value == "*" || node_item.value == "/" {
+            //     if let Some(list[index]) = list_node.next() {
+            //         if list[index].value == "+" || list[index].value == "-" || list[index].value == "*" || list[index].value == "/" {
             //             tree.add_child(TreeNode::new("OP_MATH"));
-            //             tree.children[1].add_child(TreeNode::new(&node_item.value));
+            //             tree.children[1].add_child(TreeNode::new(&list[index].value));
             //             tree.add_child(TreeNode::new("EXP_MATH"));
             //         } else {
-            //             if node_item.value == "this" {
-            //                 tree.add_child(TreeNode::new(&node_item.value));
+            //             if list[index].value == "this" {
+            //                 tree.add_child(TreeNode::new(&list[index].value));
                             
             //                 tree.add_child(TreeNode::new("FIELD"));
             //                 give_grammatical_structure(&mut tree.children[1], list_node);
-            //             } else if node_item.value.parse::<i64>().is_ok() || node_item.value.parse::<f64>().is_ok() { 
+            //             } else if list[index].value.parse::<i64>().is_ok() || list[index].value.parse::<f64>().is_ok() { 
             //                 tree.add_child(TreeNode::new("CONST"));
             //                 tree.children[0].add_child(TreeNode::new("NUMBER"));
-            //                 tree.children[0].children[0].add_child(TreeNode::new(&node_item.value));
+            //                 tree.children[0].children[0].add_child(TreeNode::new(&list[index].value));
     
-            //             } else if node_item.value.contains("'") || node_item.value.contains('"') {
+            //             } else if list[index].value.contains("'") || list[index].value.contains('"') {
             //                 tree.add_child(TreeNode::new("CONST"));
-            //                 tree.add_child(TreeNode::new(&node_item.value));
+            //                 tree.add_child(TreeNode::new(&list[index].value));
             //             } else {
             //                 tree.add_child(TreeNode::new("ID"));
             //                 give_grammatical_structure(&mut tree.children[0], list_node);
@@ -998,34 +998,34 @@ fn classificate_value(value: &str) -> Token {
             //     }
             // },
             // "OP_LOGIC" => {
-            //     if let Some(node_item) = list_node.next() { 
-            //         if node_item.value == ">" || node_item.value == "<" || node_item.value == ">=" || node_item.value == "<=" || node_item.value == "==" || node_item.value == "!=" {
-            //             tree.add_child(TreeNode::new(&node_item.value));
+            //     if let Some(list[index]) = list_node.next() { 
+            //         if list[index].value == ">" || list[index].value == "<" || list[index].value == ">=" || list[index].value == "<=" || list[index].value == "==" || list[index].value == "!=" {
+            //             tree.add_child(TreeNode::new(&list[index].value));
             //         }
             //     }
             // },
             // "OP_MATH" => { 
-            //     if let Some(node_item) = list_node.next(){
-            //         if node_item.value == "+" || node_item.value == "-" || node_item.value == "*" || node_item.value == "/" {
-            //             tree.add_child(TreeNode::new(&node_item.value));
+            //     if let Some(list[index]) = list_node.next(){
+            //         if list[index].value == "+" || list[index].value == "-" || list[index].value == "*" || list[index].value == "/" {
+            //             tree.add_child(TreeNode::new(&list[index].value));
             //         }
             //     }
             // },
             // "PARAM" => {
-            //     if let Some(node_item) = list_node.next(){
-            //         if node_item.value == "this" {
-            //             tree.add_child(TreeNode::new(&node_item.value));
+            //     if let Some(list[index]) = list_node.next(){
+            //         if list[index].value == "this" {
+            //             tree.add_child(TreeNode::new(&list[index].value));
                         
             //             tree.add_child(TreeNode::new("FIELD"));
             //             give_grammatical_structure(&mut tree.children[1], list_node);
-            //         } else if node_item.value.parse::<i64>().is_ok() || node_item.value.parse::<f64>().is_ok() { 
+            //         } else if list[index].value.parse::<i64>().is_ok() || list[index].value.parse::<f64>().is_ok() { 
             //             tree.add_child(TreeNode::new("CONST"));
             //             tree.children[0].add_child(TreeNode::new("NUMBER"));
-            //             tree.children[0].children[0].add_child(TreeNode::new(&node_item.value));
+            //             tree.children[0].children[0].add_child(TreeNode::new(&list[index].value));
 
-            //         } else if node_item.value.contains("'") || node_item.value.contains('"') {
+            //         } else if list[index].value.contains("'") || list[index].value.contains('"') {
             //             tree.add_child(TreeNode::new("CONST"));
-            //             tree.add_child(TreeNode::new(&node_item.value));
+            //             tree.add_child(TreeNode::new(&list[index].value));
             //         } else {
             //             tree.add_child(TreeNode::new("ID"));
             //             give_grammatical_structure(&mut tree.children[0], list_node);
@@ -1052,8 +1052,8 @@ fn classificate_value(value: &str) -> Token {
             //     }
             // },
             // "NAME" => {
-            //     while let Some(node_item) = list_node.next() { // Isso é apenas um stop do processamento, basta remover essa parte e implementar o resto
-            //         tree.add_child(TreeNode::new(&node_item.value));
+            //     while let Some(list[index]) = list_node.next() { // Isso é apenas um stop do processamento, basta remover essa parte e implementar o resto
+            //         tree.add_child(TreeNode::new(&list[index].value));
             //     }
             // },
             // "FIELD" => {
@@ -1071,15 +1071,15 @@ fn classificate_value(value: &str) -> Token {
             //     }
             // },
             // "CONST" => {
-            //     if let Some(node_item) = list_node.next() { 
-            //         if node_item.value.parse::<i64>().is_ok() || node_item.value.parse::<f64>().is_ok() { 
+            //     if let Some(list[index]) = list_node.next() { 
+            //         if list[index].value.parse::<i64>().is_ok() || list[index].value.parse::<f64>().is_ok() { 
             //             tree.add_child(TreeNode::new("CONST"));
             //             tree.children[0].add_child(TreeNode::new("NUMBER"));
-            //             tree.children[0].children[0].add_child(TreeNode::new(&node_item.value));
+            //             tree.children[0].children[0].add_child(TreeNode::new(&list[index].value));
 
-            //         } else if node_item.value.contains("'") || node_item.value.contains('"') {
+            //         } else if list[index].value.contains("'") || list[index].value.contains('"') {
             //             tree.add_child(TreeNode::new("CONST"));
-            //             tree.add_child(TreeNode::new(&node_item.value));
+            //             tree.add_child(TreeNode::new(&list[index].value));
             //         }
             //     }
             // },
@@ -1092,9 +1092,9 @@ fn classificate_value(value: &str) -> Token {
 //                 tree.add_child(node_value);
 //             },
 //             // "NUMBER" => {
-//             //     if let Some(node_item) = list_node.next() { 
-//             //         if node_item.value.parse::<i64>().is_ok() || node_item.value.parse::<f64>().is_ok() { 
-//             //             tree.add_child(TreeNode::new(&node_item.value));
+//             //     if let Some(list[index]) = list_node.next() { 
+//             //         if list[index].value.parse::<i64>().is_ok() || list[index].value.parse::<f64>().is_ok() { 
+//             //             tree.add_child(TreeNode::new(&list[index].value));
 //             //         }
 //             //     }
 //             // },
@@ -1104,6 +1104,7 @@ fn classificate_value(value: &str) -> Token {
 
 fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) {
     if list.len() <= index {
+        tree.add_child(EPSLON)
         return;
     }
     match tree.value {
@@ -1331,17 +1332,269 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) {
         "BLOC_COM" => {
             tree.add_child("{");
             tree.add_child("COM_LIST");
-            ggsv(&mut tree.children[1], list, index+2);   
+            ggsv(&mut tree.children[1], list, index+1);
             tree.add_child("}");
         },
         "BLOC" => {
             if list[index].value == "{" {
                 tree.add_child("BLOC_COM");
+                ggsv(&mut tree.children[0], list, index);
             } else {
                 tree.add_child("COMMAND");
+                ggsv(&mut tree.children[0], list, index);
                 tree.add_child(";");
             }
-        }
+        },
+        "COMMAND" => {
+            match list[index].value {
+                "while" => {
+                    tree.add_child("(");
+                },
+                "do" => {
+
+                },
+                "if" => {
+                    tree.add_child("(");
+                },
+                "for" => {
+                    tree.add_child("(");
+                },
+                "switch" => {
+                    tree.add_child("(");
+                    tree.add_child("ID");
+                    ggsv(&mut tree.children[1], list, index+1);
+                    tree.add_child("NOME");
+                    ggsv(&mut tree.children[2], list, index+2);
+                    tree.add_child(")");
+
+                    tree.add_child("{");
+                    tree.add_child("SWITCH_CASE");
+                    ggsv(&mut tree.children[5], list, index + 5);
+                    tree.add_child("}");
+                },
+                "break" => {
+                    tree.add_child(";");
+                },
+                "continue" => {
+                    tree.add_child(";");
+                },
+                "return" => {
+                    tree.add_child("EXP");
+                    tree.add_child(";");
+                },
+                _ => {
+                    tree.add_child("ATRIB");
+                    ggsv(&mut tree.children[0], list, index);
+                    tree.add_child(";");
+                }
+            }
+        },
+        "ATRIB" => {
+            tree.add_child("ID");
+            ggsv(&mut tree.children[0], list, index);
+
+            tree.add_child("NAME");
+            ggsv(&mut tree.children[1], list, index+1);
+
+            tree.add_child("=");
+            tree.add_child("EXP");
+            ggsv(&mut tree.children[3], list, index+3);
+        },
+        "ELSE" => {
+            if list[index].value == "else" {
+                tree.add_child("else");
+                tree.add_child("BLOC");
+                ggsv(&mut tree.children[1], list, index+1);
+            } else {
+                tree.add_child(EPSLON);
+            }
+        },
+        "FOR_EXP" => {
+            tree.add_child("ATRIB_DECL");
+            ggsv(&mut tree.children[0], list, index);
+            tree.add_child(";");
+
+            tree.add_child("EXP_LOGIC");
+            ggsv(&mut tree.children[2], list, index+2);
+            tree.add_child(";");
+
+            tree.add_child("ATRIB");
+            ggsv(&mut tree.children[5], list, index+5);
+        },
+        "SWITCH_CASE" => {
+            if list[index].value == "case" {
+                tree.add_child("case");
+
+                tree.add_child("CONST");
+                ggsv(&mut tree.children[1], list, index+1);
+
+                tree.add_child(":");
+                tree.add_child("BLOC");
+                ggsv(&mut tree.children[3], list, index+3);
+
+                tree.add_child("SWITCH_CASE");
+                ggsv(&mut tree.children[4], list, index+4);
+
+            } else if list[index].value == "default" {
+                tree.add_child("default");
+
+                tree.add_child("BLOC");
+                ggsv(&mut tree.children[1], list, index+1);
+            }
+        },
+        "EXP" => {
+            if list[index].value == "new" {
+                tree.add_child("new");
+
+                tree.add_child("TYPE");
+                ggsv(&mut tree.children[1], list, index+1);
+
+                tree.add_child("NAME");
+                ggsv(&mut tree.children[2], list, index+2);
+            } else if list[index].value == "++" || list[index].value == "--" {  {
+                tree.add_child("OPERATOR");
+                ggsv(&mut tree.children[0], list, index);
+
+                tree.add_child("ID");
+                ggsv(&mut tree.children[1], list, index+1);
+
+                tree.add_child("NAME");
+                ggsv(&mut tree.children[2], list, index+2);
+            } else if {
+
+            } else if {
+
+            }
+        },
+        "OPERATOR" => {
+            if list[index].value == "++" || list[index].value == "--" {
+                tree.add_child(&list[index].value);
+            }
+        },
+        "PARAMS" => {
+            tree.add_child("PARAM");
+            ggsv(&mut tree.children[0], list, index);
+
+            tree.add_child("PARAM_LIST");
+            ggsv(&mut tree.children[1], list, index+1);
+        },
+        "PARAM_LIST" => {
+            if list[index].value == "," {
+                tree.add_child(",");
+
+                tree.add_child("PARAM");
+                ggsv(&mut tree.children[1], list, index+1);
+
+                tree.add_child("PARAM_LIST");
+                ggsv(&mut tree.children[2], list, index+2);
+            } else {
+                tree.add_child(EPSLON)
+            }
+        },
+        "EXP_LOGIC" => {
+            tree.add_child("EXP");
+            ggsv(&mut tree.children[0], list, index);
+
+            if list[index+1].value == ">" || list[index+1].value == "<" || list[index+1].value == ">=" || list[index+1].value == "<=" || list[index+1].value == "==" || list[index+1].value == "!=" {
+                tree.add_child("OP_LOGIC");
+                ggsv(&mut tree.children[1], list, index+1);
+
+                tree.add_child("EXP_LOGIC");
+                ggsv(&mut tree.children[2], list, index+2);
+            }   
+        },
+        "EXP_MATH" => {
+            tree.add_child("PARAM");
+            ggsv(&mut tree.children[0], list, index);
+
+            if list[index+1].value == "+" || list[index+1].value == "-" || list[index+1].value == "*" || list[index+1].value == "/" {
+                tree.add_child("OP_MATH");
+                ggsv(&mut tree.children[1], list, index+1);
+
+                tree.add_child("EXP_MATH");
+                ggsv(&mut tree.children[2], list, index+2);
+            } 
+        },
+        "OP_MATH" || "OP_LOGIC" => {
+            tree.add_child(&list[index].value);
+        },
+        "PARAM" => {
+            if list[index].value == "this" {
+                tree.add_child("this");
+
+                tree.add_child("FIELD");
+                ggsv(&mut tree.children[1], list, index+1);
+            } else if list[index].value.parse::<i64>().is_ok() || list[index].value.parse::<f64>().is_ok() || list[index].contains('"') || list[index].contains("'")  || list[index] { 
+                tree.add_child("CONST");
+                ggsv(&mut tree.children[0], list, index);
+            } else {
+                tree.add_child("ID");
+                ggsv(&mut tree.children[0], list, index);
+
+                tree.add_child("NAME");
+                ggsv(&mut tree.children[1], list, index+1);
+            }
+        },
+        "ARRAY_SIZE" => {
+            if list[index].value == "[" {
+                tree.add_child("[");
+                ggsv(&mut tree.children[0], list, index);
+
+                tree.add_child("EXP_MATH");
+                ggsv(&mut tree.children[1], list, index+1);
+
+                tree.add_child("]");
+                ggsv(&mut tree.children[2], list, index+2);
+
+                tree.add_child("ARRAY_SIZE");
+                ggsv(&mut tree.children[3], list, index+3);
+            } else {
+                tree.add_child(EPSLON)   
+            }
+        },
+        "NAME" => {
+            if list[index].value == "(" {
+                tree.add_child("(");
+                ggsv(&mut tree.children[0], list, index);
+
+                tree.add_child("PARAMS");
+                ggsv(&mut tree.children[1], list, index+1);
+
+                tree.add_child(")");
+                ggsv(&mut tree.children[2], list, index+2);
+
+                tree.add_child("NAME");
+                ggsv(&mut tree.children[3], list, index+3);
+            } else list[index].value.contains(".") {
+                tree.add_child("FIELD");
+                ggsv(&mut tree.children[0], list, index);
+            } else {
+                tree.add_child(EPSLON)   
+            }
+        },
+        "FIELD" => {
+            tree.add_child("ID");
+            ggsv(&mut tree.children[0], list, index);
+
+            tree.add_child("NAME");
+            ggsv(&mut tree.children[1], list, index+1);
+        },
+        "CONST" => {
+            if list[index].value.parse::<i64>().is_ok() || list[index].value.parse::<f64>().is_ok() {
+                tree.add_child("NUMBER");
+                ggsv(&mut tree.children[0], list, index);
+            } else {
+                tree.add_child(list[index].value);
+            }
+        },
+        "ID" => {
+            tree.add_child(list[index].value);
+        },
+        "NUMBER" => {
+            if list[index].value.parse::<i64>().is_ok() || list[index].value.parse::<f64>().is_ok() {
+                tree.add_child(list[index].value);
+            }
+        },
         _ => tree.add_child(EPSLON),
     }
 }
