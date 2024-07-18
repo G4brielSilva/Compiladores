@@ -1,41 +1,24 @@
-use std::rc::Rc;
-use std::cell::RefCell;
-
 // Definição de um nó da lista duplamente encadeada
 pub struct ListNode<T> {
     pub data: T,
-    next: Option<Rc<RefCell<ListNode<T>>>>,
-    prev: Option<Rc<RefCell<ListNode<T>>>>,
+    pub next: Option<Box<ListNode<T>>>,
+    pub prev: Option<*mut ListNode<T>>, // Ponteiro bruto opcional para o nó anterior
 }
 
 impl<T> ListNode<T> {
-    fn new(data: T) -> Rc<RefCell<Self>> {
-        Rc::new(RefCell::new(ListNode {
+    fn new(data: T) -> Self {
+        ListNode {
             data,
             next: None,
             prev: None,
-        }))
-    }
-
-    pub fn next_node(&self) -> Option<Rc<RefCell<ListNode<T>>>> {
-        self.next.clone()
-    }
-
-    // Obtém a referência para o nó anterior
-    pub fn prev_node(&self) -> Option<Rc<RefCell<ListNode<T>>>> {
-        self.prev.clone()
-    }
-
-    // Exemplo de mutação dos dados do nó
-    pub fn set_data(&mut self, new_data: T) {
-        self.data = new_data;
+        }
     }
 }
 
 // Definição de uma lista duplamente encadeada
 pub struct LinkedList<T> {
-    head: Option<Rc<RefCell<ListNode<T>>>>,
-    tail: Option<Rc<RefCell<ListNode<T>>>>,
+    head: Option<Box<ListNode<T>>>,
+    tail: Option<*mut ListNode<T>>, // Ponteiro bruto opcional para o último nó
 }
 
 impl<T: std::fmt::Display> LinkedList<T> {
@@ -49,43 +32,45 @@ impl<T: std::fmt::Display> LinkedList<T> {
 
     // Insere um novo elemento no final da lista
     pub fn insert(&mut self, data: T) {
-        let new_node = ListNode::new(data);
-        match self.tail.take() {
-            Some(old_tail) => {
-                new_node.borrow_mut().prev = Some(Rc::clone(&old_tail));
-                old_tail.borrow_mut().next = Some(Rc::clone(&new_node));
+        let mut new_node = Box::new(ListNode::new(data));
+        let new_node_ptr = new_node.as_mut() as *mut ListNode<T>;
+
+        if let Some(tail_ptr) = self.tail {
+            unsafe {
+                let tail_ref = &mut *tail_ptr;
+                new_node.prev = Some(tail_ptr);
+                tail_ref.next = Some(new_node);
             }
-            None => {
-                self.head = Some(Rc::clone(&new_node));
-            }
+        } else {
+            self.head = Some(new_node);
         }
-        self.tail = Some(new_node);
+        self.tail = Some(new_node_ptr);
     }
 
     // Exemplo de método para iterar sobre os elementos da lista
     pub fn print(&self) {
-        let mut current = self.head.clone();
+        let mut current = self.head.as_ref().map(|node| &**node);
         while let Some(node) = current {
-            let borrow_node = node.borrow();
-            println!("{}", borrow_node.data);
-            current = borrow_node.next.clone();
+            println!("{}", node.data);
+            current = node.next.as_ref().map(|next| &**next);
         }
     }
 
-    pub fn get_head(&self) -> Option<Rc<RefCell<ListNode<T>>>> {
-        self.head.clone()
+    // Método para obter o nó da cabeça (head) da lista
+    pub fn get_head(&self) -> Option<&ListNode<T>> {
+        self.head.as_ref().map(|node| &**node)
     }
 
-    pub fn get(&self, index: usize) -> Option<Rc<RefCell<ListNode<T>>>> {
-        let mut current = self.head.clone();
+    // Método para obter o nó em um índice específico da lista
+    pub fn get(&self, index: usize) -> Option<&ListNode<T>> {
+        let mut current = self.head.as_ref().map(|node| &**node);
         let mut current_index = 0;
 
         while let Some(node) = current {
             if current_index == index {
                 return Some(node);
             }
-            let borrow_node = node.borrow();
-            current = borrow_node.next.clone();
+            current = node.next.as_ref().map(|next| &**next);
             current_index += 1;
         }
 
