@@ -1144,7 +1144,189 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) {
             }
         },
         "STRUCT" => {
-            tree.add_child(&list[index].value);
+            if list[index].value == "abstract" || list[index].value == "concrete" {
+                tree.add_child("INSTANCE");
+                ggsv(&mut tree.children[0], list, index);
+
+                tree.add_child("class");
+            } else {
+                tree.add_child("interface");
+            }
+        },
+        "INSTANCE" => {
+            if list[index].value == "abstract" || list[index].value == "concrete" {
+                tree.add_child(&list[index].value);
+            }
+        },
+        "INHERITANCE" => {
+            if list[index].value == "extends" {
+                tree.add_child("interface");
+
+                tree.add_child("ID");
+                ggsv(&mut tree.children[1], list, index+1);
+            } else if list[index].value == "implements" {
+                tree.add_child("implements");
+
+                tree.add_child("ID");
+                ggsv(&mut tree.children[1], list, index+1);
+            } else if list.len() < index {
+                tree.add_child(EPSLON);
+                return;
+            }
+        },
+        "ITEM_DECLS" => {
+            if list.len() >= index {
+                tree.add_child("VISIBILITY");
+                ggsv(&mut tree.children[0], list, index);
+
+                tree.add_child("SCOPE");
+                ggsv(&mut tree.children[1], list, index+1);
+
+                tree.add_child("FINAL");
+                ggsv(&mut tree.children[2], list, index+2);
+
+                tree.add_child("ITEM_DECL");
+                ggsv(&mut tree.children[3], list, index+3);
+
+                tree.add_child(";");
+
+                tree.add_child("ITEM_DECLS");
+                ggsv(&mut tree.children[5], list, index+5);
+            } else {
+                tree.add_child(EPSLON);
+                return;
+            }
+        },
+        "VISIBILITY" => {
+            if list[index].value == "public" || list[index].value == "protected" || list[index].value == "private" {
+                tree.add_child(&list[index].value);
+            }
+        },
+        "SCOPE" => {
+            if list[index].value == "static" || list[index].value == "local" {
+                tree.add_child(&list[index].value);
+            }
+        },
+        "FINAL" => {
+            if list[index].value == "final" || list[index].value == "base" {
+                tree.add_child(&list[index].value);
+            }
+        },
+        "ITEM_DECL" => {
+            if list[index].value == "abstract" || list[index].value == "concrete"{
+                tree.add_child("METHOD_DECL");
+                ggsv(&mut tree.children[0], list, index);
+            } else {
+                tree.add_child("ATRIB_DECL");
+                ggsv(&mut tree.children[0], list, index);
+            }
+        },
+        "ATRIB_DECL" => {
+            tree.add_child("TYPE");
+            ggsv(&mut tree.children[0], list, index);
+
+            tree.add_child("VAR");
+            ggsv(&mut tree.children[1], list, index+1);
+
+            tree.add_child("VAR_LIST");
+            ggsv(&mut tree.children[2], list, index+2);
+
+            tree.add_child(";");
+        },
+        "TYPE" => {
+            if list[index].value == "int" || list[index].value == "float" || list[index].value == "double" || list[index].value == "char" || list[index].value == "void" {
+                tree.add_child(&list[index].value);
+            } else {
+                tree.add_child("ID");
+                ggsv(&mut tree.children[0], list, index);
+
+                tree.add_child("NAME");
+                ggsv(&mut tree.children[1], list, index+1);
+            }
+        },
+        "VAR" => {
+            tree.add_child("ID");
+            ggsv(&mut tree.children[0], list, index);
+
+            tree.add_child("ARRAY");
+            ggsv(&mut tree.children[1], list, index+1);
+
+            tree.add_child("VALUE");
+            ggsv(&mut tree.children[2], list, index+2);
+        },
+        "VALUE" => {
+            if list[index].value == "=" {
+                tree.add_child("=");
+
+                tree.add_child("EXP");
+                ggsv(&mut tree.children[1], list, index+1);
+
+            } else {
+                tree.add_child(EPSLON);
+                return;
+            }
+        },
+        "VAR_LIST" => {
+            if list[index].value == "," {
+                tree.add_child(",");
+
+                tree.add_child("VAR");
+                ggsv(&mut tree.children[1], list, index+1);
+
+                tree.add_child("VAR_LIST");
+                ggsv(&mut tree.children[2], list, index+2);
+            } else {
+                tree.add_child(EPSLON);
+                return;
+            }
+        },
+        "ARRAY" => {
+            if list[index].value == "[" {
+                tree.add_child("[");
+
+                tree.add_child("]");
+
+                tree.add_child("ARRAY");
+                ggsv(&mut tree.children[2], list, index+2);
+            } else {
+                tree.add_child(EPSLON);
+                return;
+            }
+        },
+        "METHOD" => {
+            tree.add_child("ID");
+            ggsv(&mut tree.children[0], list, index);
+
+            tree.add_child("(");
+
+            tree.add_child("ARGUMENT");
+            ggsv(&mut tree.children[2], list, index+2);
+
+            tree.add_child(")");
+
+            tree.add_child("BLOC_COM");
+            ggsv(&mut tree.children[4], list, index+4);
+        },
+        "ARGUMENT" => {
+            tree.add_child("TYPE");
+            ggsv(&mut tree.children[0], list, index);
+
+            tree.add_child("VAR");
+            ggsv(&mut tree.children[1], list, index+1);
+
+            tree.add_child("ARG_LIST");
+            ggsv(&mut tree.children[2], list, index+2);
+        },
+        "ARG_LIST" => {
+            if list[index].value == "," {
+                tree.add_child(",");
+
+                tree.add_child("ARGUMENT");
+                ggsv(&mut tree.children[1], list, index+1);
+            } else {
+                tree.add_child(EPSLON);
+                return;
+            }
         },
         "BLOC_COM" => {
             tree.add_child("{");
