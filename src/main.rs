@@ -1103,49 +1103,64 @@ fn classificate_value(value: &str) -> Token {
 // }
 
 fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) {
+    if list.len() <= index {
+        return;
+    }
     match tree.value {
         "PROGRAM" => {
-            tree.add_child(TreeNode::new("DECLARATION"));
+            tree.add_child("DECLARATION");
             ggsv(&mut tree.children[0], list, index);
 
-            tree.add_child(TreeNode::new("DECLARATIONS"));
+            tree.add_child("DECLARATIONS");
             ggsv(&mut tree.children[1], list, index);
         }
         "DECLARATION" => {
-            tree.add_child(TreeNode::new("STRUCT"));
+            tree.add_child("STRUCT");
             ggsv(&mut tree.children[0], list, index);
             
-            tree.add_child(TreeNode::new("ID"));            
+            tree.add_child("ID");            
             ggsv(&mut tree.children[1], list, index+1);
 
-            tree.add_child(TreeNode::new("INHERITANCE"));
+            tree.add_child("INHERITANCE");
             ggsv(&mut tree.children[2], list, index+2);
 
-            tree.add_child(TreeNode::new("{"));
+            tree.add_child("{");
 
-            tree.add_child(TreeNode::new("ITEM_DECLS"));
+            tree.add_child("ITEM_DECLS");
             ggsv(&mut tree.children[4], list, index+4);
 
-            tree.add_child(TreeNode::new("}"));
+            tree.add_child("}");
         },
         "DECLARATIONS" => {
             if list.len() >= index {
-                tree.add_child(TreeNode::new("DECLARATION"));
+                tree.add_child("DECLARATION");
                 ggsv(&mut tree.children[0], list, index);
 
-                tree.add_child(TreeNode::new("DECLARATIONS"));
+                tree.add_child("DECLARATIONS");
                 ggsv(&mut tree.children[1], list, index+1);   
             } else {
-                tree.add_child(TreeNode::new("ε"));
+                tree.add_child(EPSLON);
                 return;
             }
         },
         "STRUCT" => {
-            if list.len() > index {
-                tree.add_child(TreeNode::new(&list[index].value));
-            }
+            tree.add_child(&list[index].value);
         },
-        _ => tree.add_child(TreeNode::new(EPSLON)),
+        "BLOC_COM" => {
+            tree.add_child("{");
+            tree.add_child("COM_LIST");
+            ggsv(&mut tree.children[1], list, index+2);   
+            tree.add_child("}");
+        },
+        "BLOC" => {
+            if list[index].value == "{" {
+                tree.add_child("BLOC_COM");
+            } else {
+                tree.add_child("COMMAND");
+                tree.add_child(";");
+            }
+        }
+        _ => tree.add_child(EPSLON),
     }
 }
 
@@ -1174,7 +1189,7 @@ fn main() -> std::io::Result<()> {
     }
     
     println!("\n >>> LIST <<< \n");
-    list.print();
+    // list.print();
     println!("\n >>> TREE <<< \n");
 
     let test = &list[2];
