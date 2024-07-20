@@ -405,50 +405,114 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             }
             return id+1;
         },
-        // "COMMAND" => {
-        //     match &list[index].value as &str {
-        //         "while" => {
-        //             tree.add_child("(");
-        //         },
-        //         "do" => {
+        "COMMAND" => {
+            match &list[id].value as &str {
+                "while" => {
+                    tree.add_child("while");
+                    id += 1;
+                    tree.add_child("(");
+                    id += 1;
+                    tree.add_child("EXP_LOGIC");
+                    id = ggsv(&mut tree.children[2], list, id);
 
-        //         },
-        //         "if" => {
-        //             tree.add_child("(");
-        //         },
-        //         "for" => {
-        //             tree.add_child("(");
-        //         },
-        //         "switch" => {
-        //             tree.add_child("(");
-        //             tree.add_child("ID");
-        //             id = ggsv(&mut tree.children[1], list, index+1);
-        //             tree.add_child("NOME");
-        //             id = ggsv(&mut tree.children[2], list, index+2);
-        //             tree.add_child(")");
+                    tree.add_child(")");
+                    id += 1;
+                    tree.add_child("BLOCK");
+                    id = ggsv(&mut tree.children[4], list, id);
+                },
+                "do" => {
+                    tree.add_child("do");
+                    id += 1;
+                    tree.add_child("BLOCK");
+                    id = ggsv(&mut tree.children[1], list, id);
 
-        //             tree.add_child("{");
-        //             tree.add_child("SWITCH_CASE");
-        //             id = ggsv(&mut tree.children[5], list, index + 5);
-        //             tree.add_child("}");
-        //         },
-        //         "break" => {
-        //             tree.add_child(";");
-        //         },
-        //         "continue" => {
-        //             tree.add_child(";");
-        //         },
-        //         "return" => {
-        //             tree.add_child("EXP");
-        //             tree.add_child(";");
-        //         },
-        //         _ => {
-        //             tree.add_child("ATRIB");
-        //             id = ggsv(&mut tree.children[0], list, index);
-        //             tree.add_child(";");
-        //         }
-        //     }
-        // },
+                    tree.add_child("while");
+                    id += 1;
+                    tree.add_child("(");
+                    id += 1;
+                    tree.add_child("EXP_LOGIC");
+                    id = ggsv(&mut tree.children[4], list, id);
+
+                    tree.add_child(")");
+                    id += 1;
+                },
+                "if" => {
+                    tree.add_child("if");
+                    id += 1;
+                    tree.add_child("(");
+                    id += 1;
+                    tree.add_child("EXP_LOGIC");
+                    id = ggsv(&mut tree.children[2], list, id);
+
+                    tree.add_child(")");
+                    id += 1;
+                    tree.add_child("BLOCK");
+                    id = ggsv(&mut tree.children[4], list, id);
+
+                    tree.add_child("ELSE");
+                    id = ggsv(&mut tree.children[5], list, id);
+                },
+                "for" => {
+                    tree.add_child("for");
+                    id += 1;
+                    tree.add_child("(");
+                    id += 1;
+                    tree.add_child("FOR_EXP");
+                    id = ggsv(&mut tree.children[2], list, id);
+
+                    tree.add_child(")");
+                    id += 1;
+                    tree.add_child("BLOCK");
+                    id = ggsv(&mut tree.children[4], list, id);
+                },
+                "switch" => {
+                    tree.add_child("switch");
+                    id += 1;
+                    tree.add_child("(");
+                    id += 1;
+                    
+                    tree.add_child("ID");
+                    id = ggsv(&mut tree.children[1], list, id);
+                    
+                    tree.add_child("NAME");
+                    id = ggsv(&mut tree.children[2], list, id);
+
+                    tree.add_child(")");
+                    id += 1;
+
+                    tree.add_child("{");
+                    id += 1;
+
+                    tree.add_child("SWITCH_CASE");
+                    id = ggsv(&mut tree.children[5], list, id );
+                    tree.add_child("}");
+                    id += 1;
+                },
+                "break" => {
+                    tree.add_child("break");
+                    id += 1;
+                    tree.add_child(";");
+                },
+                "continue" => {
+                    tree.add_child("continue");
+                    id += 1;
+                    tree.add_child(";");
+                },
+                "return" => {
+                    tree.add_child("return");
+                    
+                    id += 1;
+                    tree.add_child("EXP");
+
+                    tree.add_child(";");
+                },
+                _ => {
+                    tree.add_child("ATRIB");
+                    id = ggsv(&mut tree.children[0], list, id);
+                    tree.add_child(";");
+                }
+            }
+        },
         "ATRIB" => {
             tree.add_child("ID");
             id = ggsv(&mut tree.children[0], list, id);
@@ -457,8 +521,10 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             id = ggsv(&mut tree.children[1], list, id);
 
             tree.add_child("=");
+            id += 1;
+            
             tree.add_child("EXP");
-            id = ggsv(&mut tree.children[3], list, id+1);
+            id = ggsv(&mut tree.children[3], list, id);
             return id;
         },
         "ELSE" => {
@@ -472,39 +538,41 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
                 return id;
             }
         },
-        // "FOR_EXP" => {
-        //     tree.add_child("ATRIB_DECL");
-        //     id = ggsv(&mut tree.children[0], list, index);
-        //     tree.add_child(";");
+        "FOR_EXP" => {
+            tree.add_child("ATRIB_DECL");
+            id = ggsv(&mut tree.children[0], list, id);
+            tree.add_child(";");
 
-        //     tree.add_child("EXP_LOGIC");
-        //     id = ggsv(&mut tree.children[2], list, index+2);
-        //     tree.add_child(";");
+            tree.add_child("EXP_LOGIC");
+            id = ggsv(&mut tree.children[2], list, id);
+            tree.add_child(";");
 
-        //     tree.add_child("ATRIB");
-        //     id = ggsv(&mut tree.children[5], list, index+5);
-        // },
-        // "SWITCH_CASE" => {
-        //     if list[index].value == "case" {
-        //         tree.add_child("case");
+            tree.add_child("ATRIB");
+            id = ggsv(&mut tree.children[4], list, id);
+            return id;
+        },
+        "SWITCH_CASE" => {
+            if list[id].value == "case" {
+                tree.add_child("case");
 
-        //         tree.add_child("CONST");
-        //         id = ggsv(&mut tree.children[1], list, index+1);
+                tree.add_child("CONST");
+                id = ggsv(&mut tree.children[1], list, id);
 
-        //         tree.add_child(":");
-        //         tree.add_child("BLOC");
-        //         id = ggsv(&mut tree.children[3], list, index+3);
+                tree.add_child(":");
+                tree.add_child("BLOC");
+                id = ggsv(&mut tree.children[3], list, id);
 
-        //         tree.add_child("SWITCH_CASE");
-        //         id = ggsv(&mut tree.children[4], list, index+4);
+                tree.add_child("SWITCH_CASE");
+                id = ggsv(&mut tree.children[4], list, id);
 
-        //     } else if list[index].value == "default" {
-        //         tree.add_child("default");
+            } else if list[id].value == "default" {
+                tree.add_child("default");
 
-        //         tree.add_child("BLOC");
-        //         id = ggsv(&mut tree.children[1], list, index+1);
-        //     }
-        // },
+                tree.add_child("BLOC");
+                id = ggsv(&mut tree.children[1], list, id);
+            }
+            return id;
+        },
         "EXP" => {
             if list[id].value == "new" {
                 tree.add_child("new");
