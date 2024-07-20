@@ -15,7 +15,7 @@ use regex::Regex;
 const EPSLON: &str = "ε";
 
 fn separate_file_content(content: &String) -> Vec<String> {
-    let delimiters = vec!['\n', ' '];
+    let delimiters = vec!['\n', ' ', ';'];
     let subs = content.split(&delimiters[..])
                     .filter(|s| !s.is_empty())
                     .collect::<Vec<&str>>();
@@ -143,7 +143,6 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
         tree.add_child(EPSLON);
         return id;
     }
-    println!("{} {} {} {}", id, list.len() <= id, list[id].value, tree.value);
     match tree.value {
         "PROGRAM" => {
             tree.add_child("DECLARATION");
@@ -223,8 +222,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             return id;
         },
         "ITEM_DECLS" => {
-            if list.len() > id {
-                //println!("{}", list[id].value);
+            if list.len() > id && (list[id].value == "public" || list[id].value == "private" || list[id].value == "protected") {
                 tree.add_child("VISIBILITY");
                 id = ggsv(&mut tree.children[0], list, id);
 
@@ -238,7 +236,6 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
                 id = ggsv(&mut tree.children[3], list, id);
 
                 tree.add_child("ITEM_DECLS");
-                //println!("{}", list[id].value);
                 id = ggsv(&mut tree.children[4], list, id);
                 return id;
             } else {
@@ -288,7 +285,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             id = ggsv(&mut tree.children[2], list, id);
 
             tree.add_child(";");
-            return id+1;
+            return id;
         },
         "TYPE" => {
             if list[id].value == "int" || list[id].value == "float" || list[id].value == "double" || list[id].value == "char" || list[id].value == "void" {
@@ -319,7 +316,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
 
                 tree.add_child("EXP");
                 id = ggsv(&mut tree.children[1], list, id+1);
-                return id+1;
+                return id;
             }
             tree.add_child(EPSLON);
             return id;
@@ -340,15 +337,14 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
 
         },
         "ARRAY" => {
-            //println!("{}", list[id].value);
             if list[id].value == "[" {
-                tree.add_child("[");
-
-                tree.add_child("]");
-
+                tree.add_child(&list[id].value);
+                id += 1;
+                tree.add_child(&list[id].value);
+                id += 1;
                 tree.add_child("ARRAY");
-                id = ggsv(&mut tree.children[2], list, id+2);
-                return id+1;
+                id = ggsv(&mut tree.children[2], list, id);
+                return id;
             } 
 
             tree.add_child(EPSLON);
@@ -537,7 +533,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
                     id = ggsv(&mut tree.children[0], list, id);
                 }
             }
-            return id+1;
+            return id;
         },
         "OPERATOR" => {
             if list[id].value == "++" || list[id].value == "--" {
@@ -584,6 +580,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
         "EXP_MATH" => {
             tree.add_child("PARAM");
             id = ggsv(&mut tree.children[0], list, id);
+
             if list[id].value == "+" || list[id].value == "-" || list[id].value == "*" || list[id].value == "/" {
                 tree.add_child("OP_MATH");
                 id = ggsv(&mut tree.children[1], list, id+1);
@@ -591,14 +588,13 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
                 tree.add_child("EXP_MATH");
                 id = ggsv(&mut tree.children[2], list, id);
             }
-            return id+1;
+            return id;
         },
         "OP_MATH" | "OP_LOGIC" => {
             tree.add_child(&list[id].value);
             return id+1;
         },
         "PARAM" => {
-            //println!("{}", list[id].value);
             if list[id].value == "this" {
                 tree.add_child("this");
 
@@ -614,7 +610,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
                 tree.add_child("NAME");
                 id = ggsv(&mut tree.children[1], list, id);
             }
-            return id+1;
+            return id;
         },
         "ARRAY_SIZE" => {
             if list[id].value == "[" {
@@ -675,8 +671,12 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             }
         },
         "ID" => {
-            tree.add_child(&list[id].value);
-            return id+1;
+            let result = classificate_identifier_number_or_error(&list[id].value);
+            if matches!(result, Token::Identifier) {
+                tree.add_child(&list[id].value);
+                return id+1;
+            }
+            return id;
         },
         "NUMBER" => {
             if list[id].value.parse::<i64>().is_ok() || list[id].value.parse::<f64>().is_ok() {
