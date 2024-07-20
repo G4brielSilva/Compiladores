@@ -222,7 +222,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             return id;
         },
         "ITEM_DECLS" => {
-            if list.len() > id && (list[id].value == "public" || list[id].value == "private" || list[id].value == "protected") {
+            if list.len() > id && ((list[id].value == "public" || list[id].value == "private" || list[id].value == "protected") &&  list[id+1].value != "class") {
                 tree.add_child("VISIBILITY");
                 id = ggsv(&mut tree.children[0], list, id);
 
@@ -290,6 +290,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
         "TYPE" => {
             if list[id].value == "int" || list[id].value == "float" || list[id].value == "double" || list[id].value == "char" || list[id].value == "void" {
                 tree.add_child(&list[id].value);
+                return id+1;
             } else {
                 tree.add_child("ID");
                 id = ggsv(&mut tree.children[0], list, id);
@@ -297,7 +298,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
                 tree.add_child("NAME");
                 id = ggsv(&mut tree.children[1], list, id);
             }
-            return id+1;
+            return id;
         },
         "VAR" => {
             tree.add_child("ID");
@@ -350,20 +351,34 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             tree.add_child(EPSLON);
             return id;
         },
+        "METHOD_DECL" => {
+            if list[id].value == "abstract" || list[id].value == "concrete" {
+                tree.add_child("INSTANCE");
+                id = ggsv(&mut tree.children[0], list, id);    
+
+                tree.add_child("TYPE");
+                id = ggsv(&mut tree.children[1], list, id);
+                
+                tree.add_child("METHOD");
+                id = ggsv(&mut tree.children[2], list, id);
+            }
+            return id;
+        },
         "METHOD" => {
             tree.add_child("ID");
             id = ggsv(&mut tree.children[0], list, id);
 
             tree.add_child("(");
-
+            id += 1;
             tree.add_child("ARGUMENT");
-            id = ggsv(&mut tree.children[2], list, id+1);
+            id = ggsv(&mut tree.children[2], list, id);
 
             tree.add_child(")");
+            id += 1;
 
             tree.add_child("BLOC_COM");
-            id = ggsv(&mut tree.children[4], list, id+1);
-            return id+1;
+            id = ggsv(&mut tree.children[4], list, id);
+            return id;
         },
         "ARGUMENT" => {
             tree.add_child("TYPE");
@@ -374,23 +389,25 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
 
             tree.add_child("ARG_LIST");
             id = ggsv(&mut tree.children[2], list, id);
-            return id+1;
+
+            return id;
         },
         "ARG_LIST" => {
             if list[id].value == "," {
                 tree.add_child(",");
-
+                id += 1;
                 tree.add_child("ARGUMENT");
-                id = ggsv(&mut tree.children[1], list, id+1);
-                return id+1;
+                id = ggsv(&mut tree.children[1], list, id);
+                return id;
             }
             tree.add_child(EPSLON);
             return id;
         },
         "BLOC_COM" => {
             tree.add_child("{");
+            id += 1;
             tree.add_child("COM_LIST");
-            id = ggsv(&mut tree.children[1], list, id+1);
+            id = ggsv(&mut tree.children[1], list, id);
             tree.add_child("}");
             return id+1;
         },
@@ -512,6 +529,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
                     tree.add_child(";");
                 }
             }
+            return id;
         },
         "ATRIB" => {
             tree.add_child("ID");
@@ -522,7 +540,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
 
             tree.add_child("=");
             id += 1;
-            
+
             tree.add_child("EXP");
             id = ggsv(&mut tree.children[3], list, id);
             return id;

@@ -1,9 +1,9 @@
 interface Collection {
-    public static final int a = 10;
-    public static final float b = 10.0;
-    public static final float c = 10.0;
-    public static final char d[] = "string";
-    public static final char e = '\n';
-    public static final char f[] = 'exemplo';
-    public static final char g = "z";
+    public local base concrete void add(Pessoa p) {
+
+    };
+
+    public local base abstract Pessoa get(char nome[]) {
+
+    };
 }
