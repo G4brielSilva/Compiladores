@@ -1,9 +1,13 @@
-interface Collection {
-    public local base concrete void add(Pessoa p) {
+concrete class Funcao {
+    private local final int i;
+    private local final Aluno result;
 
-    };
-
-    public local base abstract Pessoa get(char nome[]) {
-
-    };
+    protected local final concrete void int maior(Aluno a[]){
+        result = a[0];
+        for (int i = 0; i < 15; ++i) {
+            if (a[i].media > result.media)
+                result = a[i];
+        }
+        return result;
+    }
 }

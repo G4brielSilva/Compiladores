@@ -15,7 +15,7 @@ use regex::Regex;
 const EPSLON: &str = "ε";
 
 fn super_split(content: &String) -> Vec<&str> {
-    let re = Regex::new(r"([,;: \n])").unwrap();
+    let re = Regex::new(r"([,;: \n()--\+\+])").unwrap();
 
     // Dividir a string e manter os delimitadores
     let mut parts: Vec<&str> = Vec::new();
@@ -79,15 +79,76 @@ fn is_char_alphanumeric_or_underscore(c: &char) -> bool {
 }
 
 fn is_logic_operator(s: &str) -> bool {
-    s == "==" || s == ">=" || s == "<=" || s == "!="
+    s == "==" || s == ">=" || s == "<=" || s == "!=" || s == "<" || s == ">"
+}
+
+fn is_math_operator(s: &str) -> bool {
+    s == "++" || s == "--"
+}
+
+fn contains_an_operator_or_equal(s: &str) -> bool {
+    s.contains("++") || s.contains("--") || s.contains("+") || s.contains("-") || s.contains("*") || s.contains("/") || s.contains("==") || s.contains("!=") || s.contains(">=") || s.contains("<=") || s.contains(">") || s.contains("<") || s.contains("=")
+}
+
+fn break_by_operator_or_equal(s: &str) -> Vec<String> {
+    let mut result = Vec::new();
+    let mut current = String::new();
+    let mut chars = s.chars().peekable();
+
+    while let Some(c) = chars.next() {
+        match c {
+            '+' | '-' | '*' | '/' | '=' | '!' | '>' | '<' => {
+                if !current.is_empty() {
+                    result.push(current.clone());
+                    current.clear();
+                }
+                current.push(c);
+                if let Some(&next) = chars.peek() {
+                    if (c == '+' && next == '+')
+                        || (c == '-' && next == '-')
+                        || (c == '=' && next == '=')
+                        || (c == '!' && next == '=')
+                        || (c == '>' && next == '=')
+                        || (c == '<' && next == '=')
+                    {
+                        current.push(chars.next().unwrap());
+                    }
+                }
+                result.push(current.clone());
+                current.clear();
+            }
+            _ => {
+                if !current.is_empty() && "+-*/=!><".contains(current.chars().last().unwrap()) {
+                    result.push(current.clone());
+                    current.clear();
+                }
+                current.push(c);
+            }
+        }
+    }
+
+    if !current.is_empty() {
+        result.push(current);
+    }
+
+    result
 }
 
 fn break_token(token: &str) -> Vec<String> {
     let mut result: Vec<String> = Vec::new();
 
     let mut string = String::new();
-    if is_logic_operator(token) || valid_numeric_value(token) || (has_more_then_one_decimal_point(token) && is_string_with_more_then_one_decimal_point_numeric(token)) || valid_string_value(token) || valid_char_value(token) {
+    if is_math_operator(token) || is_logic_operator(token) || valid_numeric_value(token) || (has_more_then_one_decimal_point(token) && is_string_with_more_then_one_decimal_point_numeric(token)) || valid_string_value(token) || valid_char_value(token) {
         result.push(token.to_string());
+        return result;
+    }
+
+    if contains_an_operator_or_equal(token) {
+        let breaked_token = break_by_operator_or_equal(token);
+        
+        for bk in breaked_token {
+            result.push(bk.to_string());
+        }
         return result;
     }
 
@@ -260,13 +321,13 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
         "INHERITANCE" => {
             if list[id].value == "extends" {
                 tree.add_child("interface");
-
+                id += 1;
                 tree.add_child("ID");
                 id = ggsv(&mut tree.children[1], list, id);
                 return id+1;
             } else if list[id].value == "implements" {
                 tree.add_child("implements");
-
+                id += 1;
                 tree.add_child("ID");
                 ggsv(&mut tree.children[1], list, id);
                 return id+1;
@@ -275,6 +336,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             return id;
         },
         "ITEM_DECLS" => {
+            println!("{}", list[id].value);
             if list.len() > id && ((list[id].value == "public" || list[id].value == "private" || list[id].value == "protected")) {
                 tree.add_child("VISIBILITY");
                 id = ggsv(&mut tree.children[0], list, id);
@@ -648,18 +710,35 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             }
         },
         "FOR_EXP" => {
-            tree.add_child("ATRIB_DECL");
-            id = ggsv(&mut tree.children[0], list, id);
-            tree.add_child(";");
-            id+=1;
+            if list[id+2].value == ":" {
+                tree.add_child("TYPE");
+                id = ggsv(&mut tree.children[0], list, id);
 
-            tree.add_child("EXP_LOGIC");
-            id = ggsv(&mut tree.children[2], list, id);
-            tree.add_child(";");
-            id+=1;
+                tree.add_child("ID");
+                id = ggsv(&mut tree.children[1], list, id);
 
-            tree.add_child("ATRIB");
-            id = ggsv(&mut tree.children[4], list, id);
+                tree.add_child(":");
+                id += 1;
+
+                tree.add_child("ID");
+                id = ggsv(&mut tree.children[3], list, id);
+
+                tree.add_child("NAME");
+                id = ggsv(&mut tree.children[4], list, id);
+            } else {
+                tree.add_child("ATRIB_DECL");
+                id = ggsv(&mut tree.children[0], list, id);
+
+                tree.add_child("EXP_LOGIC");
+                id = ggsv(&mut tree.children[1], list, id);
+
+                tree.add_child(";");
+                id+=1;
+
+                tree.add_child("ATRIB");
+                id = ggsv(&mut tree.children[3], list, id);
+            }
+        
             return id;
         },
         "SWITCH_CASE" => {
@@ -794,13 +873,12 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
         "ARRAY_SIZE" => {
             if list[id].value == "[" {
                 tree.add_child("[");
-                id = ggsv(&mut tree.children[0], list, id);
-
+                id += 1;
                 tree.add_child("EXP_MATH");
                 id = ggsv(&mut tree.children[1], list, id);
 
                 tree.add_child("]");
-                id = ggsv(&mut tree.children[2], list, id);
+                id += 1;
 
                 tree.add_child("ARRAY_SIZE");
                 id = ggsv(&mut tree.children[3], list, id);
@@ -826,6 +904,14 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             } else if list[id].value == "." {
                 tree.add_child("FIELD");
                 id = ggsv(&mut tree.children[0], list, id);
+                return id;
+            } else if list[id].value == "[" {
+                tree.add_child("ARRAY_SIZE");
+                id = ggsv(&mut tree.children[0], list, id);
+                
+                tree.add_child("NAME");
+                id = ggsv(&mut tree.children[1], list, id);
+
                 return id;
             }
             tree.add_child(EPSLON);
