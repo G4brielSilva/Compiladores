@@ -336,7 +336,6 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             return id;
         },
         "ITEM_DECLS" => {
-            println!("{}", list[id].value);
             if list.len() > id && ((list[id].value == "public" || list[id].value == "private" || list[id].value == "protected")) {
                 tree.add_child("VISIBILITY");
                 id = ggsv(&mut tree.children[0], list, id);
@@ -603,7 +602,6 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
 
                     tree.add_child("BLOC");
                     id = ggsv(&mut tree.children[4], list, id);
-                    println!("{}", list[id].value);
 
                     tree.add_child("ELSE");
                     id = ggsv(&mut tree.children[5], list, id);
