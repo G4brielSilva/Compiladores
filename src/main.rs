@@ -57,7 +57,6 @@ fn separate_file_content(content: &String) -> Vec<String> {
     let mut result: Vec<String> = Vec::new();
     for sub in &subs {
         result.append(&mut break_token(sub));
-        return result;
     }
 
     result.retain(|s| !s.is_empty());
