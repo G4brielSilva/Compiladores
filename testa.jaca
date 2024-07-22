@@ -1,0 +1,3 @@
+interface Collection {
+    public static final int a = 10;
+}

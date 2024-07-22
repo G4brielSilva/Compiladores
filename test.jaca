@@ -4,6 +4,6 @@ interface Collection {
     public static final float c = 10.0;
     public static final char[] d = "string";
     public static final char e = '\n';
-    public static final char[] f ='exemplo';
+    public static final char[] f = 'exemplo';
     public static final char[] g = "z";
 }
