@@ -1,3 +1,9 @@
-interface Collection {
-    public static final int a = 10;
+concrete class Turma implements Collection {
+    public local base concrete Pessoa get(char nome[]) {
+        for(Aluno a: alunos) {
+            if(a[i].getNome() == nome)
+                result = a[i];
+        }
+        return result;
+    }
 }
