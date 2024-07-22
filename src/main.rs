@@ -70,9 +70,9 @@ fn read_file(file_path: &str) -> std::io::Result<String> {
     Ok(contents)
 }
 
-//fn is_string_alphanumeric_or_underscore(s: &str) -> bool {
- //   s.chars().all(|c| c.is_alphanumeric() || c == '_')
-//} !!review
+fn is_string_alphanumeric_or_underscore(s: &str) -> bool {
+    s.chars().all(|c| c.is_alphanumeric() || c == '_')
+}
 
 fn is_char_alphanumeric_or_underscore(c: &char) -> bool {
     c.is_alphanumeric() || *c == '_'
@@ -249,9 +249,16 @@ fn is_valid_const_value(s: &str) -> bool {
     matches!(token, Token::Identifier | Token::Number) || s.contains("'") || s.contains('"')
 }
 
+fn check_final_token<'a>(id:usize, list: &'a [Node]) -> bool{
+    if id >= list.len() {
+        panic!("Final de programa inesperado");
+    }
+    return true;
+}
+
 fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usize {
     let mut id = index;
-    // println!("{} {}",list[id].value, tree.value);
+    //println!("{} {}",list[id].value, tree.value);
     
     if list.len() <= id {
         tree.add_child(EPSLON);
@@ -290,7 +297,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             tree.add_child("INHERITANCE");
             id = ggsv(&mut tree.children[2], list, id);
 
-            if list[id].value == "{" {
+            if check_final_token(id,list)&& list[id].value == "{"  {
                tree.add_child("{");
                id+=1;
             } else {
@@ -299,8 +306,8 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             tree.add_child("ITEM_DECLS");
             id = ggsv(&mut tree.children[4], list, id);
             
-            if list[id].value == "{" {
-               tree.add_child("{");
+            if check_final_token(id,list)&& list[id].value == "}" {
+               tree.add_child("}");
                id+=1;
             } else {
                 panic!("Erro: Token inesperado");
@@ -312,14 +319,14 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             if list[id].value == "abstract" || list[id].value == "concrete" {
                 tree.add_child("INSTANCE");
                 id = ggsv(&mut tree.children[0], list, id);
-                if list[id].value == "class" {
+                if  check_final_token(id,list)&& list[id].value == "class" {
                     tree.add_child("class");
                     id+=1;
                 } else {
                     panic!("Erro: Token inesperado");
                 }
                 return id;
-            } else if list[id].value == "interface" {
+            } else if  check_final_token(id,list)&& list[id].value == "interface" {
                 tree.add_child(&list[id].value);
                 return id+1;
             } else {
@@ -327,7 +334,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             }
         },
         "INSTANCE" => {
-            if list[index].value == "abstract" || list[index].value == "concrete" {
+            if check_final_token(id,list)&&(list[index].value == "abstract" || list [index].value == "concrete")  {
                 tree.add_child(&list[index].value);
                 return id+1;
             }else {
@@ -335,7 +342,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             }
         },
         "INHERITANCE" => {
-            if list[id].value == "extends" {
+            if  check_final_token(id,list)&& list[id].value == "extends" {
 
                 tree.add_child("extends");
                 id +=1;
@@ -343,7 +350,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
                 tree.add_child("ID");
                 id = ggsv(&mut tree.children[1], list, id);
                 return id;
-            } else if list[id].value == "implements" {
+            } else if  check_final_token(id,list)&& list[id].value == "implements" {
                 tree.add_child("implements");
                 id +=1;
                 tree.add_child("ID");
@@ -377,7 +384,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             }
         },
         "VISIBILITY" => {
-            if list[id].value == "public" || list[id].value == "protected" || list[id].value == "private" {
+            if check_final_token(id,list)&& (list[id].value == "public" || list[id].value == "protected" || list  [id].value == "private")  {
                 tree.add_child(&list[id].value);
                 return id+1;
             } else {
@@ -385,7 +392,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             }
         },
         "SCOPE" => {
-            if list[id].value == "static" || list[id].value == "local" {
+            if check_final_token(id,list)&& (list[id].value == "static" || list [id].value == "local")  {
                 tree.add_child(&list[id].value);
                 return id+1;
             }else {
@@ -393,7 +400,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             }
         },
         "FINAL" => {
-            if list[id].value == "final" || list[id].value == "base" {
+            if check_final_token(id,list)&& (list[id].value == "final" || list [id].value == "base")  {
                 tree.add_child(&list[id].value);
                 return id+1;
             }else {
@@ -420,78 +427,13 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             tree.add_child("VAR_LIST");
             id = ggsv(&mut tree.children[2], list, id);
 
-            if list[id].value == ";" {
+            if check_final_token(id,list)&& list[id].value == ";"  {
                 tree.add_child(";");
                 id+=1;
             } else {
                 panic!("Erro: Token inesperado");
             }
             
-            return id;
-        },
-        "TYPE" => {
-            if list[id].value == "int" || list[id].value == "float" || list[id].value == "double" || list[id].value == "char" || list[id].value == "void" {
-                tree.add_child(&list[id].value);
-                return id+1;
-            } else {
-                tree.add_child("ID");
-                id = ggsv(&mut tree.children[0], list, id);
-
-                tree.add_child("NAME");
-                id = ggsv(&mut tree.children[1], list, id);
-                return id;
-            }
-            return id;
-        },
-        "VAR" => {
-            tree.add_child("ID");
-            id = ggsv(&mut tree.children[0], list, id);
-
-            tree.add_child("ARRAY");
-            id = ggsv(&mut tree.children[1], list, id);
-
-            tree.add_child("VALUE");
-            id = ggsv(&mut tree.children[2], list, id);
-            return id;
-        },
-        "VALUE" => {
-            if list[id].value == "=" {
-                tree.add_child("=");
-                id += 1;
-
-                tree.add_child("EXP");
-                id = ggsv(&mut tree.children[1], list, id);
-                return id;
-            }
-            tree.add_child(EPSLON);
-            return id;
-        },
-        "VAR_LIST" => {
-            if list[id].value == "," {
-                tree.add_child(",");
-                id += 1;
-                tree.add_child("VAR");
-                id = ggsv(&mut tree.children[1], list, id);
-
-                tree.add_child("VAR_LIST");
-                id = ggsv(&mut tree.children[2], list, id);
-                return id;
-            }
-            tree.add_child(EPSLON);
-            return id;
-
-        },
-        "ARRAY" => {
-            if list[id].value == "[" {
-                tree.add_child(&list[id].value);
-                id += 1;
-                tree.add_child(&list[id].value);
-                id += 1;
-                tree.add_child("ARRAY");
-                id = ggsv(&mut tree.children[2], list, id);
-                return id;
-            } 
-            tree.add_child(EPSLON);
             return id;
         },
         "METHOD_DECL" => {
@@ -507,26 +449,102 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             }
             return id;
         },
-        "METHOD" => {
+        "TYPE" => {
+            if check_final_token(id,list) && (list[id].value == "int" || list[id].value == "float" || list[id].value == "double" || list[id].value == "char" || list [id].value == "void")  {
+                tree.add_child(&list[id].value);
+                return id+1;
+            } else {
+                tree.add_child("ID");
+                id = ggsv(&mut tree.children[0], list, id);
+
+                tree.add_child("NAME");
+                id = ggsv(&mut tree.children[1], list, id);
+                return id;
+            }
+        },
+        "VAR" => {
             tree.add_child("ID");
             id = ggsv(&mut tree.children[0], list, id);
 
-            tree.add_child("(");
-            id += 1;
+            tree.add_child("ARRAY");
+            id = ggsv(&mut tree.children[1], list, id);
+
+            tree.add_child("VALUE");
+            id = ggsv(&mut tree.children[2], list, id);
+            return id;
+        },
+        "VALUE" => {
+            if check_final_token(id,list)&& list[id].value == "=" {
+                tree.add_child("=");
+                id += 1;
+
+                tree.add_child("EXP");
+                id = ggsv(&mut tree.children[1], list, id);
+                return id;
+            }
+            tree.add_child(EPSLON);
+            return id;
+        },
+        "VAR_LIST" => {
+            if check_final_token(id,list)&& list[id].value == ","  {
+                tree.add_child(",");
+                id += 1;
+                tree.add_child("VAR");
+                id = ggsv(&mut tree.children[1], list, id);
+
+                tree.add_child("VAR_LIST");
+                id = ggsv(&mut tree.children[2], list, id);
+                return id;
+            }
+            tree.add_child(EPSLON);
+            return id;
+
+        },
+        "ARRAY" => {
+            if check_final_token(id,list)&& list[id].value == "[" {
+                tree.add_child(&list[id].value);
+                id += 1;
+                if check_final_token(id,list)&& list[id].value == "]" {
+                    tree.add_child("]");
+                    id+=1;
+                } else {
+                    panic!("Erro: Token inesperado");
+                }
+                tree.add_child("ARRAY");
+                id = ggsv(&mut tree.children[2], list, id);
+                return id;
+            } 
+            tree.add_child(EPSLON);
+            return id;
+        },
+        "METHOD" => {
+            tree.add_child("ID");
+            id = ggsv(&mut tree.children[0], list, id);
+            if check_final_token(id,list)&& list[id].value == "(" {
+                tree.add_child("(");
+                id+=1;
+            } else {
+                panic!("Erro: Token inesperado");
+            }
             
             tree.add_child("ARGUMENT");
             id = ggsv(&mut tree.children[2], list, id);
 
-            tree.add_child(")");
-            id += 1;
-
+            if check_final_token(id,list)&& list[id].value == ")" {
+                tree.add_child(")");
+                id+=1;
+            } else {
+                panic!("Erro: Token inesperado");
+            }
             tree.add_child("BLOC_COM");
             id = ggsv(&mut tree.children[4], list, id);
             return id;
         },
         "ARGUMENT" => {
             tree.add_child("TYPE");
+
             tree.add_child("VAR");
+            
             tree.add_child("ARG_LIST");
 
             if list[id].value != ")" {
@@ -538,7 +556,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             return id;
         },
         "ARG_LIST" => {
-            if list[id].value == "," {
+            if check_final_token(id,list)&& list[id].value == "," {
                 tree.add_child(",");
                 id += 1;
                 tree.add_child("ARGUMENT");
@@ -549,14 +567,32 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             return id;
         },
         "BLOC_COM" => {
-            tree.add_child("{");
-            id += 1;
+            if check_final_token(id,list)&& list[id].value == "{" {
+                tree.add_child("{");
+                id+=1;
+            } else {
+                panic!("Erro: Token inesperado");
+            }
 
             tree.add_child("COM_LIST");
             id = ggsv(&mut tree.children[1], list, id);
 
-            tree.add_child("}");
-            return id+1;
+            if check_final_token(id,list)&& list[id].value == "}" {
+                tree.add_child("}");
+                return id+1;
+            } else {
+                panic!("Erro: Token inesperado");
+            }
+        },
+        "BLOC" => {
+            if list[id].value == "{" {
+                tree.add_child("BLOC_COM");
+                id = ggsv(&mut tree.children[0], list, id);
+            } else {
+                tree.add_child("COMMAND");
+                id = ggsv(&mut tree.children[0], list, id);
+            }
+            return id;
         },
         "COM_LIST" => {
             if list[id].value != "}" {
@@ -569,29 +605,27 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             }
             tree.add_child(EPSLON);
             return id;
-        }
-        "BLOC" => {
-            if list[id].value == "{" {
-                tree.add_child("BLOC_COM");
-                id = ggsv(&mut tree.children[0], list, id);
-            } else {
-                tree.add_child("COMMAND");
-                id = ggsv(&mut tree.children[0], list, id);
-            }
-            return id;
         },
         "COMMAND" => {
             match &list[id].value as &str {
                 "while" => {
                     tree.add_child("while");
                     id += 1;
-                    tree.add_child("(");
-                    id += 1;
+                    if check_final_token(id,list)&& list[id].value == "(" {
+                        tree.add_child("(");
+                        id+=1;
+                    } else {
+                        panic!("Erro: Token inesperado");
+                    }
                     tree.add_child("EXP_LOGIC");
                     id = ggsv(&mut tree.children[2], list, id);
 
-                    tree.add_child(")");
-                    id += 1;
+                    if check_final_token(id,list)&& list[id].value == ")" {
+                        tree.add_child(")");
+                        id+=1;
+                    } else {
+                        panic!("Erro: Token inesperado");
+                    }
 
                     tree.add_child("BLOC");
                     id = ggsv(&mut tree.children[4], list, id);
@@ -603,30 +637,50 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
                     tree.add_child("BLOC");
                     id = ggsv(&mut tree.children[1], list, id);
 
-                    tree.add_child("while");
-                    id += 1;
+                    if  check_final_token(id,list)&& list[id].value == "while" {
+                        tree.add_child("while");
+                        id+=1;
+                    } else {
+                        panic!("Erro: Token inesperado");
+                    }
 
-                    tree.add_child("(");
-                    id += 1;
+                    if check_final_token(id,list)&& list[id].value == "(" {
+                        tree.add_child("(");
+                        id+=1;
+                    } else {
+                        panic!("Erro: Token inesperado");
+                    }
 
                     tree.add_child("EXP_LOGIC");
                     id = ggsv(&mut tree.children[4], list, id);
 
-                    tree.add_child(")");
-                    id += 1;
+                    if check_final_token(id,list)&& list[id].value == ")" {
+                        tree.add_child(")");
+                        id+=1;
+                    } else {
+                        panic!("Erro: Token inesperado");
+                    }
                 },
                 "if" => {
                     tree.add_child("if");
                     id += 1;
 
-                    tree.add_child("(");
-                    id += 1;
+                    if check_final_token(id,list)&& list[id].value == "(" {
+                        tree.add_child("(");
+                        id+=1;
+                    } else {
+                        panic!("Erro: Token inesperado");
+                    }
 
                     tree.add_child("EXP_LOGIC");
                     id = ggsv(&mut tree.children[2], list, id);
 
-                    tree.add_child(")");
-                    id += 1;
+                    if check_final_token(id,list)&& list[id].value == ")" {
+                        tree.add_child(")");
+                        id+=1;
+                    } else {
+                        panic!("Erro: Token inesperado");
+                    }
 
                     tree.add_child("BLOC");
                     id = ggsv(&mut tree.children[4], list, id);
@@ -638,14 +692,22 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
                     tree.add_child("for");
                     id += 1;
 
-                    tree.add_child("(");
-                    id += 1;
+                    if list[id].value == "(" && check_final_token(id,list){
+                        tree.add_child("(");
+                        id+=1;
+                    } else {
+                        panic!("Erro: Token inesperado");
+                    }
 
                     tree.add_child("FOR_EXP");
                     id = ggsv(&mut tree.children[2], list, id);
 
-                    tree.add_child(")");
-                    id += 1;
+                    if list[id].value == ")" && check_final_token(id,list){
+                        tree.add_child(")");
+                        id+=1;
+                    } else {
+                        panic!("Erro: Token inesperado");
+                    }
 
                     tree.add_child("BLOC");
                     id = ggsv(&mut tree.children[4], list, id);
@@ -654,8 +716,12 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
                     tree.add_child("switch");
                     id += 1;
 
-                    tree.add_child("(");
-                    id += 1;
+                    if check_final_token(id,list)&& list[id].value == "(" {
+                        tree.add_child("(");
+                        id+=1;
+                    } else {
+                        panic!("Erro: Token inesperado");
+                    }
                     
                     tree.add_child("ID");
                     id = ggsv(&mut tree.children[1], list, id);
@@ -663,31 +729,51 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
                     tree.add_child("NAME");
                     id = ggsv(&mut tree.children[2], list, id);
 
-                    tree.add_child(")");
-                    id += 1;
+                    if check_final_token(id,list)&& list[id].value == ")" {
+                        tree.add_child(")");
+                        id+=1;
+                    } else {
+                        panic!("Erro: Token inesperado");
+                    }
 
-                    tree.add_child("{");
-                    id += 1;
+                    if check_final_token(id,list)&& list[id].value == "{"  {
+                        tree.add_child("{");
+                        id+=1;
+                    } else {
+                        panic!("Erro: Token inesperado");
+                    }
 
                     tree.add_child("SWITCH_CASE");
                     id = ggsv(&mut tree.children[5], list, id );
 
-                    tree.add_child("}");
-                    id += 1;
+                    if check_final_token(id,list)&& list[id].value == "}" {
+                        tree.add_child("}");
+                        id+=1;
+                    } else {
+                        panic!("Erro: Token inesperado");
+                    }
                 },
                 "break" => {
                     tree.add_child("break");
                     id += 1;
 
-                    tree.add_child(";");
-                    id+=1
+                    if check_final_token(id,list)&& list[id].value == ";" {
+                        tree.add_child(";");
+                        id+=1;
+                    } else {
+                        panic!("Erro: Token inesperado");
+                    }
                 },
                 "continue" => {
                     tree.add_child("continue");
                     id += 1;
 
-                    tree.add_child(";");
-                    id+=1;
+                    if check_final_token(id,list)&& list[id].value == ";" {
+                        tree.add_child(";");
+                        id+=1;
+                    } else {
+                        panic!("Erro: Token inesperado");
+                    }
                 },
                 "return" => {
                     tree.add_child("return");
@@ -696,15 +782,23 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
                     tree.add_child("EXP");
                     id = ggsv(&mut tree.children[1], list, id);
 
-                    tree.add_child(";");
-                    id+=1;
+                    if list[id].value == ";" && check_final_token(id,list) {
+                        tree.add_child(";");
+                        id+=1;
+                    } else {
+                        panic!("Erro: Token inesperado");
+                    }
                 },
                 _ => {
                     tree.add_child("ATRIB");
                     id = ggsv(&mut tree.children[0], list, id);
 
-                    tree.add_child(";");
-                    id+=1;
+                    if check_final_token(id,list)&& list[id].value == ";" {
+                        tree.add_child(";");
+                        id+=1;
+                    } else {
+                        panic!("Erro: Token inesperado");
+                    }
                 }
             }
             return id;
@@ -716,8 +810,12 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             tree.add_child("NAME");
             id = ggsv(&mut tree.children[1], list, id);
 
-            tree.add_child("=");
-            id += 1;
+            if check_final_token(id,list)&& list[id].value == "=" {
+                tree.add_child("=");
+                id+=1;
+            } else {
+                panic!("Erro: Token inesperado");
+            }
 
             tree.add_child("EXP");
             id = ggsv(&mut tree.children[3], list, id);
@@ -727,6 +825,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
         "ELSE" => {
             if list[index].value == "else" {
                 tree.add_child("else");
+                id +=1;
                 tree.add_child("BLOC");
                 id = ggsv(&mut tree.children[1], list, id+1);
                 return id;
@@ -755,11 +854,22 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
                 tree.add_child("ATRIB_DECL");
                 id = ggsv(&mut tree.children[0], list, id);
 
-                tree.add_child("EXP_LOGIC");
-                id = ggsv(&mut tree.children[1], list, id);
+                if check_final_token(id,list)&& list[id].value == ";" {
+                    tree.add_child(";");
+                    id+=1;
+                } else {
+                    panic!("Erro: Token inesperado");
+                }
 
-                tree.add_child(";");
-                id+=1;
+                tree.add_child("EXP_LOGIC");
+                id = ggsv(&mut tree.children[2], list, id);
+
+                if check_final_token(id,list)&& list[id].value == ";" {
+                    tree.add_child(";");
+                    id+=1;
+                } else {
+                    panic!("Erro: Token inesperado");
+                }
 
                 tree.add_child("ATRIB");
                 id = ggsv(&mut tree.children[3], list, id);
@@ -770,11 +880,18 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
         "SWITCH_CASE" => {
             if list[id].value == "case" {
                 tree.add_child("case");
+                id +=1;
 
                 tree.add_child("CONST");
                 id = ggsv(&mut tree.children[1], list, id);
 
-                tree.add_child(":");
+                if check_final_token(id,list)&& list[id].value == ":" {
+                    tree.add_child(":");
+                    id+=1;
+                } else {
+                    panic!("Erro: Token inesperado");
+                }
+
                 tree.add_child("BLOC");
                 id = ggsv(&mut tree.children[3], list, id);
 
@@ -783,17 +900,20 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
 
             } else if list[id].value == "default" {
                 tree.add_child("default");
+                id +=1;
 
                 tree.add_child("BLOC");
                 id = ggsv(&mut tree.children[1], list, id);
+            } else {
+                panic!("Erro: Token inesperado");
             }
             return id;
         },
         "EXP" => {
             if list[id].value == "new" {
                 tree.add_child("new");
-
                 id += 1;
+
                 tree.add_child("TYPE");
                 id = ggsv(&mut tree.children[1], list, id);
 
@@ -820,11 +940,12 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             return id;
         },
         "OPERATOR" => {
-            if list[id].value == "++" || list[id].value == "--" {
+            if list[id].value == "++" || list[id].value == "--" && check_final_token(id,list){
                 tree.add_child(&list[id].value);
                 return id+1;
+            } else {
+                panic!("Erro: Token inesperado");
             }
-            return id;
         },
         "PARAMS" => {
             tree.add_child("PARAM");
@@ -838,6 +959,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             if list[id].value == "," {
                 tree.add_child(",");
                 id+=1;
+
                 tree.add_child("PARAM");
                 id = ggsv(&mut tree.children[1], list, id);
 
@@ -874,14 +996,26 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             }
             return id;
         },
-        "OP_MATH" | "OP_LOGIC" => {
-            tree.add_child(&list[id].value);
-            return id+1;
+        "OP_LOGIC" => {
+            if check_final_token(id,list) && (list[id].value == ">" || list[id].value == "<" || list[id].value == ">=" || list[id].value == "<=" || list[id].value == "==" || list[id].value == "!=")  {
+                tree.add_child(&list[id].value);
+                return id+1;
+            } else {
+                panic!("Erro: Token inesperado");
+            }
+        },
+        "OP_MATH" =>{
+            if check_final_token(id,list)&& (list[id].value == "+" || list[id].value == "-" || list[id].value == "*" || list[id].value == "/")  {
+                tree.add_child(&list[id].value);
+                return id+1;
+            } else {
+                panic!("Erro: Token inesperado");
+            }
         },
         "PARAM" => {
             if list[id].value == "this" {
                 tree.add_child("this");
-
+                id +=1;
                 tree.add_child("FIELD");
                 id = ggsv(&mut tree.children[1], list, id+1);
             } else if list[id].value.parse::<i64>().is_ok() || list[id].value.parse::<f64>().is_ok() || list[id].value.contains('"') || list[id].value.contains("'") { 
@@ -903,8 +1037,12 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
                 tree.add_child("EXP_MATH");
                 id = ggsv(&mut tree.children[1], list, id);
 
-                tree.add_child("]");
-                id += 1;
+                if check_final_token(id,list)&& list[id].value == "]" {
+                    tree.add_child("]");
+                    id+=1;
+                } else {
+                    panic!("Erro: Token inesperado");
+                }
 
                 tree.add_child("ARRAY_SIZE");
                 id = ggsv(&mut tree.children[3], list, id);
@@ -914,15 +1052,19 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             return id;
         },
         "NAME" => {
-            if list[id].value == "(" {
+            if check_final_token(id,list)&& list[id].value == "(" {
                 tree.add_child("(");
                 id += 1;
 
                 tree.add_child("PARAMS");
                 id = ggsv(&mut tree.children[1], list, id);
 
-                tree.add_child(")");
-                id += 1;
+                if check_final_token(id,list)&& list[id].value == ")" {
+                    tree.add_child(")");
+                    id+=1;
+                } else {
+                    panic!("Erro: Token inesperado");
+                }
 
                 tree.add_child("NAME");
                 id = ggsv(&mut tree.children[3], list, id);
@@ -944,15 +1086,19 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             return id;
         },
         "FIELD" => {
-            tree.add_child(".");
-            id += 1;
+            if check_final_token(id,list) && list[id].value == "."{
+                tree.add_child(".");
+                id+=1;
 
-            tree.add_child("ID");
-            id = ggsv(&mut tree.children[1], list, id);
+                tree.add_child("ID");
+                id = ggsv(&mut tree.children[1], list, id);
 
-            tree.add_child("NAME");
-            id = ggsv(&mut tree.children[2], list, id);
-            return id;
+                tree.add_child("NAME");
+                id = ggsv(&mut tree.children[2], list, id);
+                return id;
+            } else {
+                panic!("Erro: Token inesperado");
+            }
         },
         "CONST" => {
             if list[id].value.parse::<i64>().is_ok() || list[id].value.parse::<f64>().is_ok() {
@@ -988,7 +1134,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
 
 fn main() -> std::io::Result<()> {
     let mut list:Vec<Node> = vec![];
-    let contents = read_file("./testa.jaca")?;
+    let contents = read_file("./testa2.jaca")?;
     
     let strings = separate_file_content(&contents).into_iter().filter(|s| s!= "\r").collect::<Vec<String>>(); // Separando as strings do arquivo em tokens
     println!("{:?}", strings);
