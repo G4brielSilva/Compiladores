@@ -354,7 +354,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
                 tree.add_child("implements");
                 id +=1;
                 tree.add_child("ID");
-                ggsv(&mut tree.children[1], list, id);
+                id = ggsv(&mut tree.children[1], list, id);
                 return id;
             }
             tree.add_child(EPSLON);
