@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Token {
     Struct,
     Instance,
@@ -70,5 +70,11 @@ impl fmt::Display for Token {
             Token::Number => write!(f, "Number"),
             Token::Error => write!(f, "Error"),
         }
+    }
+}
+
+impl PartialEq<&str> for Token {
+    fn eq(&self, other: &&str) -> bool {
+        self.to_string() == *other
     }
 }

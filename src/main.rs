@@ -2,12 +2,12 @@ mod enum_token;
 mod node;
 mod tree;
 mod linked_list;
+mod table_row;
 
 use tree::TreeNode;
 use enum_token::Token;
 use node::Node;
-//use linked_list::LinkedList; !!review
-//use linked_list::ListNode; !!review
+use table_row::Row;
 use std::fs::File;
 use std::io::prelude::*;
 use regex::Regex;
@@ -256,6 +256,9 @@ fn check_final_token<'a>(id:usize, list: &'a [Node]) -> bool{
     return true;
 }
 
+// Tem que alterar alguma coisa pra dar acesso global de forma mais trnql
+const table:Vec<Row> = vec![];
+
 fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usize {
     let mut id = index;
     //println!("{} {}",list[id].value, tree.value);
@@ -296,11 +299,12 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
 
             tree.add_child("INHERITANCE");
             id = ggsv(&mut tree.children[2], list, id);
-
+            
             if check_final_token(id,list)&& list[id].value == "{"  {
                tree.add_child("{");
                id+=1;
             } else {
+                println!("{} {} {}", id, list.len(), list[id].value);
                 panic!("Erro: Token inesperado");
             }
             tree.add_child("ITEM_DECLS");
@@ -1112,8 +1116,23 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
         },
         "ID" => {
             let result = classificate_identifier_number_or_error(&list[id].value);
+            
+            if let Some(_) = find_on_table_by(table, "implement", "name") {
+                panic!("Erro: Não é possível redeclarar {}", list[id].value);
+            }
+
             if matches!(result, Token::Identifier) {
                 tree.add_child(&list[id].value);
+
+                table.push(Row {
+                    name: list[id].value,
+                    classification: result,
+                    data_type: "test".to_string(),
+                    scope: "Não faço ideia de como vamos capturar esse valor :)".to_string(),
+                    qtd: 32,
+                    ord: 12
+                });
+
                 return id+1;
             }
             return id;
@@ -1132,9 +1151,39 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
     }
 }
 
+fn find_on_table_by(table: Vec<Row>, value: &str, field: &str) -> Option<Row> {
+    for row in table {
+        if field == "name" && row.name == value {
+            return Some(row);
+        }
+
+        if field == "classification" && row.classification == value {
+            return Some(row);
+        }
+
+        if field == "data_type" && row.data_type == value {
+            return Some(row);
+        }
+
+        if field == "scope" && row.scope == value {
+            return Some(row);
+        }
+
+        if field == "qtd" && row.qtd == value.parse::<u32>().unwrap() {
+            return Some(row);
+        }
+
+        if field == "ord" && row.ord == value.parse::<u32>().unwrap() {
+            return Some(row);
+        }
+    }
+    None
+}
+
 fn main() -> std::io::Result<()> {
     let mut list:Vec<Node> = vec![];
-    let contents = read_file("./testa2.jaca")?;
+    
+    let contents = read_file("./testa.jaca")?;
     
     let strings = separate_file_content(&contents).into_iter().filter(|s| s!= "\r").collect::<Vec<String>>(); // Separando as strings do arquivo em tokens
     println!("{:?}", strings);
@@ -1150,17 +1199,25 @@ fn main() -> std::io::Result<()> {
 
         list.push(Node {
             value: value.to_string(),
-            token
+            token: token
         });
     }
     
-    // println!("\n >>> LIST <<< \n");
-
-    println!("\n >>> TREE <<< \n");
+    println!("\n >>> LIST <<< \n");
+    for value in &list {
+        println!("{}", value);
+    }
 
     // Chama a função para iniciar a análise gramatical
     ggsv(&mut tree, &list, 0);
+
+    println!("\n >>> TREE <<< \n");
     tree.list();
 
+    println!("\n >>> TABLE <<< \n");
+    for value in &table {
+        println!("{}", value);
+    }
+    
     Ok(())
 }
