@@ -1,4 +1,33 @@
-interface Collection {
-    public static final int a = 10;
-    public static final int teste = 12;
+concrete class Funcao {
+    public local final int TAM = 10;
+    protected local base float aluno;
+    private static base char A = 'a', B, C, D;
+    protected local final abstract int fatorial(int a){
+        int i, result=0;
+        i = 1;
+        while (i < a){
+            result = result*i;
+            i=i+1;
+        }
+        return result;
+    }
+    private local base float exp(float a, float b){
+        int i, result=a;
+        i = 1;
+        if (b = 0) result = 1
+        else
+            do{
+                result = a * a;
+                ++i;
+            } while (i < b);
+        return result;
+    }
+    private local base int maior(Aluno[] a){
+        Aluno result = a[0];
+        for (int i = 0; i < 15; ++i){
+            if (a[i].media > result.media)
+                result = a[i];
+        }
+        return result;
+    }
 }

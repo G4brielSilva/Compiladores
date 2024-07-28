@@ -261,7 +261,7 @@ const table:Vec<Row> = vec![];
 
 fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usize {
     let mut id = index;
-    //println!("{} {}",list[id].value, tree.value);
+    // println!("{} {}",list[id].value, tree.value);
     
     if list.len() <= id {
         tree.add_child(EPSLON);
@@ -314,6 +314,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
                tree.add_child("}");
                id+=1;
             } else {
+                println!("{}",list[id]);
                 panic!("Erro: Token inesperado");
             }
             
@@ -1009,7 +1010,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize) -> usi
             }
         },
         "OP_MATH" =>{
-            if check_final_token(id,list)&& (list[id].value == "+" || list[id].value == "-" || list[id].value == "*" || list[id].value == "/")  {
+            if check_final_token(id,list) && (list[id].value == "+" || list[id].value == "-" || list[id].value == "*" || list[id].value == "/")  {
                 tree.add_child(&list[id].value);
                 return id+1;
             } else {
