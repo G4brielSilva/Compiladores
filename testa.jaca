@@ -6,4 +6,5 @@ concrete class Turma implements Collection {
         }
         return result;
     }
+    public local final int TAM = 10;
 }

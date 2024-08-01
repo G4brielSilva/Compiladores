@@ -2,6 +2,7 @@ use crate::enum_token::Token;
 use core::fmt;
 
 #[warn(const_item_mutation)]
+#[derive(Clone)]
 pub struct Row {
     pub name: String,
     pub classification: Token,
