@@ -2,7 +2,7 @@ concrete class Funcao {
     private local final int i;
     private local final Aluno result;
 
-    protected local final concrete void int maior(Aluno a[]){
+    protected local final concrete int maior(Aluno a[]){
         result = a[0];
         for (int i = 0; i < 15; ++i) {
             if (a[i].media > result.media)

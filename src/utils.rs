@@ -191,33 +191,35 @@ pub fn check_final_token<'a>(id:usize, list: &'a [Node]) -> bool{
     return true;
 }
 
-pub fn find_on_table_by(table: &Vec<Row>, value: &str, field: &str) -> Option<Row> {
+pub fn find_on_table_by(table: &Vec<Row>, value: &str, field: &str) -> Vec<Row> {
+    let mut rows: Vec<Row> = Vec::new();
+
     for row in table.iter().cloned() {
         if field == "name" && row.name == value {
-            return Some(row);
+            rows.push(row.clone());
         }
 
         if field == "classification" && row.classification == value {
-            return Some(row);
+            rows.push(row.clone());
         }
 
         if field == "data_type" && row.data_type == value {
-            return Some(row);
+            rows.push(row.clone());
         }
 
         if field == "scope" && row.scope == value {
-            return Some(row);
+            rows.push(row.clone());
         }
 
         if field == "qtd" && row.qtd == value.parse::<u32>().unwrap() {
-            return Some(row);
+            rows.push(row.clone());
         }
 
         if field == "ord" && row.ord == value.parse::<u32>().unwrap() {
-            return Some(row);
+            rows.push(row.clone());
         }
     }
-    None
+    return rows;
 }
 
 pub fn classificate_identifier_number_or_error(value: &str) -> Token {
