@@ -905,8 +905,8 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                     }
                 }
 
-                if rows.len() == 0 && !matches!(list[id-1].token, Token::Identifier | Token::Type | Token::Instance ) {
-                    if !matches!(list[id-1].token, Token::Final) || !matches!(list[id+1].token, Token::Identifier) {
+                if rows.len() == 0 && !matches!(list[id-1].token, Token::Identifier | Token::Type | Token::Instance | Token::Inheritance ) {
+                    if !matches!(list[id-1].token, Token::Final | Token::ClassType ) || !matches!(list[id+1].token, Token::Identifier) {
                         panic!("Erro: Não é possível acessar um valor não declarado anteriormente {}", list[id].value);
                     }
                 }
