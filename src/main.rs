@@ -633,7 +633,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
             } else {
                 tree.add_child("ATRIB_DECL");
                 id = ggsv(&mut tree.children[0], list, id,table);
-
+                println!("{}", list[id].value);
                 if check_final_token(id,list)&& list[id].value == ";" {
                     tree.add_child(";");
                     id+=1;
@@ -893,7 +893,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
         "ID" => {
             if matches!(list[id].token, Token::Identifier) {
                 if !matches!(list[id+1].token, Token::Identifier) {
-                    let rows = find_on_table_by(table, "implement", "name");
+                    let rows = find_on_table_by(table, &list[id].value, "name");
                     let in_scope_rows: Vec<_> = rows
                             .iter()
                             .filter(|row| row.scope == SCOPE.lock().unwrap().to_string())
@@ -914,6 +914,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                 }
                 
                 tree.add_child(&list[id].value);
+
                 let name = list[id].value.to_owned();
 
                 let data_type;
