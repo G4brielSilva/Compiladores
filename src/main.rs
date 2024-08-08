@@ -289,7 +289,12 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
             tree.add_child("ID");
             let name = &list[id].value;
             id = ggsv(&mut tree.children[0], list, id,table);
-            
+            let old_scope: String;
+            {
+                let mut escopo = SCOPE.lock().unwrap();
+                old_scope = escopo.to_string();
+                *escopo = String::from(name);
+            }            
             if check_final_token(id,list)&& list[id].value == "(" {
                 tree.add_child("(");
                 id+=1;
@@ -305,12 +310,6 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                 id+=1;
             } else {
                 panic!("Erro: Token inesperado {}", list[id].value);
-            }
-            let mut old_scope: String;
-            {
-                let mut escopo = SCOPE.lock().unwrap();
-                old_scope = escopo.to_string();
-                *escopo = String::from(name);
             }
             tree.add_child("BLOC_COM");
             id = ggsv(&mut tree.children[4], list, id,table);
