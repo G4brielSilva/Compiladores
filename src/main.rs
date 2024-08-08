@@ -10,22 +10,42 @@ use enum_token::Token;
 use node::Node;
 use table_row::Row;
 use utils::*;
+use std::any::type_name;
+
 
 #[macro_use]
 extern crate lazy_static;
 
-use std::sync::Mutex;
+use std::{any::Any, sync::Mutex};
 
 lazy_static! {
     static ref SCOPE: Mutex<String> = Mutex::new(String::from("global"));
+    static ref ORDEM: Mutex<u32> = Mutex::new(1);
+    static ref QTD: Mutex<u32> = Mutex::new(0);
 }
 
 const EPSLON: &str = "ε";
 
+fn type_of<T>(_: &T) -> &str {
+    type_name::<T>()
+}
+
+fn verifica_tipo<'a>(table: &mut Vec<Row>, list: &'a [Node],id:usize,tipo:String) -> bool{
+    for row in table.iter().cloned(){
+        if row.name == list[id].value && row.scope==SCOPE.lock().unwrap().to_string(){
+            if tipo == row.data_type {
+                return true
+            }
+        }
+    }
+    return false;
+}
+
 fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table: &mut Vec<Row>) -> usize {
     let mut id = index;
-    // println!("{} {}",list[id].value, tree.value);
-    
+    if id<list.len() {
+        println!("{} {}",list[id].value, tree.value);
+    }    
     if list.len() <= id {
         tree.add_child(EPSLON);
         return id;
@@ -328,8 +348,20 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
             tree.add_child("ARG_LIST");
 
             if list[id].value != ")" {
+                for row in table.iter_mut(){
+                    if row.name == *SCOPE.lock().unwrap() {
+                        let mut qtd = QTD.lock().unwrap();
+                        *qtd = *qtd+1;
+                        row.qtd = *qtd;
+                    }
+                }                
                 id = ggsv(&mut tree.children[0], list, id,table);
                 id = ggsv(&mut tree.children[1], list, id,table);
+                if let Some(last)= table.last_mut(){ 
+                    let mut ordem = ORDEM.lock().unwrap();
+                    last.ord = *ordem;
+                    *ordem = *ordem+1;
+                }
                 id = ggsv(&mut tree.children[2], list, id,table);
             }
 
@@ -586,7 +618,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
         "ATRIB" => {
             tree.add_child("ID");
             id = ggsv(&mut tree.children[0], list, id,table);
-
+            
             tree.add_child("NAME");
             id = ggsv(&mut tree.children[1], list, id,table);
 
@@ -596,10 +628,26 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
             } else {
                 panic!("Erro: Token inesperado {}", list[id].value);
             }
-
-            tree.add_child("EXP");
-            id = ggsv(&mut tree.children[3], list, id,table);
-
+            if list[id].value == "new" || list[id].value == "++" || list[id].value == "--" {
+                tree.add_child("EXP");
+                id = ggsv(&mut tree.children[3], list, id,table);
+            }else{
+                if verifica_tipo(table, list, id-2, "int".to_string()) || list[id-2].value.parse::<i64>().is_ok() {
+                    if list[id].value.parse::<i64>().is_ok() || verifica_tipo(table, list, id, "int".to_string()) {
+                        tree.add_child("EXP");
+                        id = ggsv(&mut tree.children[3], list, id,table);
+                    }else{
+                        panic!("Tipo inesperado {}",list[id]);
+                    }
+                }else if verifica_tipo(table, list, id-2, "float".to_string()) || list[id-2].value.parse::<f64>().is_ok() {
+                    if !list[id].value.parse::<f64>().is_ok() || !verifica_tipo(table, list, id, "float".to_string()) {
+                        tree.add_child("EXP");
+                        id = ggsv(&mut tree.children[3], list, id,table);
+                    }else{
+                        panic!("Tipo inesperado {}",list[id]);
+                    }
+                }
+            }
             return id;
         },
         "ELSE" => {
@@ -607,7 +655,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                 tree.add_child("else");
                 id +=1;
                 tree.add_child("BLOC");
-                id = ggsv(&mut tree.children[1], list, id+1,table);
+                id = ggsv(&mut tree.children[1], list, id,table);
                 return id;
             } else {
                 tree.add_child(EPSLON);
@@ -633,16 +681,16 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
             } else {
                 tree.add_child("ATRIB_DECL");
                 id = ggsv(&mut tree.children[0], list, id,table);
-                println!("{}", list[id].value);
-                if check_final_token(id,list)&& list[id].value == ";" {
+                
+                /*if check_final_token(id,list)&& list[id].value == ";" {
                     tree.add_child(";");
                     id+=1;
                 } else {
                     panic!("Erro: Token inesperado {}", list[id].value);
-                }
+                }*/
 
                 tree.add_child("EXP_LOGIC");
-                id = ggsv(&mut tree.children[2], list, id,table);
+                id = ggsv(&mut tree.children[1], list, id,table);
 
                 if check_final_token(id,list)&& list[id].value == ";" {
                     tree.add_child(";");
@@ -650,7 +698,6 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                 } else {
                     panic!("Erro: Token inesperado {}", list[id].value);
                 }
-
                 tree.add_child("ATRIB");
                 id = ggsv(&mut tree.children[3], list, id,table);
             }
@@ -702,12 +749,12 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
             } else if list[id].value == "++" || list[id].value == "--" { 
                 tree.add_child("OPERATOR");
                 id = ggsv(&mut tree.children[0], list, id,table);
-
+                
                 tree.add_child("ID");
-                id = ggsv(&mut tree.children[1], list, id+1,table);
+                id = ggsv(&mut tree.children[1], list, id,table);
 
                 tree.add_child("NAME");
-                id = ggsv(&mut tree.children[2], list, id+2,table);
+                id = ggsv(&mut tree.children[2], list, id,table);
             } else {
                 if is_valid_const_value(&list[id].value) || list[id].value == "this" {
                     tree.add_child("EXP_MATH");
@@ -757,9 +804,22 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
             if list[id].value == ">" || list[id].value == "<" || list[id].value == ">=" || list[id].value == "<=" || list[id].value == "==" || list[id].value == "!=" {
                 tree.add_child("OP_LOGIC");
                 id = ggsv(&mut tree.children[1], list, id,table );
-
-                tree.add_child("EXP_LOGIC");
-                id = ggsv(&mut tree.children[2], list, id,table);
+                if verifica_tipo(table, list, id-2, "int".to_string()) || list[id-2].value.parse::<i64>().is_ok() {
+                    if list[id].value.parse::<i64>().is_ok() || verifica_tipo(table, list, id, "int".to_string()) {
+                        tree.add_child("EXP_LOGIC");
+                        id = ggsv(&mut tree.children[2], list, id,table);
+                    }else{
+                        panic!("Tipo inesperado {}",list[id]);
+                    }
+                    
+                }else if verifica_tipo(table, list, id-2, "float".to_string()) || list[id-2].value.parse::<f64>().is_ok() {
+                    if !list[id].value.parse::<f64>().is_ok() || !verifica_tipo(table, list, id, "float".to_string()) {
+                        tree.add_child("EXP_LOGIC");
+                        id = ggsv(&mut tree.children[2], list, id,table);
+                    }else{
+                        panic!("Tipo inesperado {}",list[id]);
+                    }
+                }
             }
             return id;
         },
@@ -769,10 +829,24 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
 
             if list[id].value == "+" || list[id].value == "-" || list[id].value == "*" || list[id].value == "/" {
                 tree.add_child("OP_MATH");
-                id = ggsv(&mut tree.children[1], list, id+1,table);
-
-                tree.add_child("EXP_MATH");
-                id = ggsv(&mut tree.children[2], list, id,table);
+                id = ggsv(&mut tree.children[1], list, id,table);
+                
+                if verifica_tipo(table, list, id-2, "int".to_string()) || list[id-2].value.parse::<i64>().is_ok() {
+                    if list[id].value.parse::<i64>().is_ok() || verifica_tipo(table, list, id, "int".to_string()) {
+                        tree.add_child("EXP_MATH");
+                        id = ggsv(&mut tree.children[2], list, id,table);
+                    }else{
+                        panic!("Tipo inesperado {}",list[id]);
+                    }
+                    
+                }else if verifica_tipo(table, list, id-2, "float".to_string()) || list[id-2].value.parse::<f64>().is_ok() {
+                    if !list[id].value.parse::<f64>().is_ok() || !verifica_tipo(table, list, id, "float".to_string()) {
+                        tree.add_child("EXP_MATH");
+                        id = ggsv(&mut tree.children[2], list, id,table);
+                    }else{
+                        panic!("Tipo inesperado {}",list[id]);
+                    }
+                }
             }
             return id;
         },
@@ -797,7 +871,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                 tree.add_child("this");
                 id +=1;
                 tree.add_child("FIELD");
-                id = ggsv(&mut tree.children[1], list, id+1,table);
+                id = ggsv(&mut tree.children[1], list, id,table);
             } else if list[id].value.parse::<i64>().is_ok() || list[id].value.parse::<f64>().is_ok() || list[id].value.contains('"') || list[id].value.contains("'") { 
                 tree.add_child("CONST");
                 id = ggsv(&mut tree.children[0], list, id,table);
@@ -891,6 +965,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
             }
         },
         "ID" => {
+            let mut adicionar = false;
             if matches!(list[id].token, Token::Identifier) {
                 if !matches!(list[id+1].token, Token::Identifier) {
                     let rows = find_on_table_by(table, &list[id].value, "name");
@@ -899,11 +974,13 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                             .filter(|row| row.scope == SCOPE.lock().unwrap().to_string())
                             .cloned()
                             .collect();
-
+                    
                     if  in_scope_rows.len() > 0 {
                         if matches!(list[id-1].token, Token::Identifier | Token::Type) {
                             panic!("Erro: Não é possível redeclarar {}", list[id].value);
                         }
+                    }else{
+                        adicionar = true;
                     }
 
                     if rows.len() == 0 && !matches!(list[id-1].token, Token::Identifier | Token::Type | Token::Instance | Token::Inheritance ) {
@@ -915,23 +992,26 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                 
                 tree.add_child(&list[id].value);
 
-                let name = list[id].value.to_owned();
+                if adicionar{
+                    let name = list[id].value.to_owned();
 
-                let data_type;
-                if matches!(list[id-1].token, Token::Type) {
-                    data_type = list[id-1].value.to_string();
-                } else {
-                    data_type = "void".to_string();
+                    let data_type;
+                    if matches!(list[id-1].token, Token::Type) {
+                        data_type = list[id-1].value.to_string();
+                    } else {
+                        data_type = "void".to_string();
+                    }
+    
+                    table.push(Row {
+                        name: name,
+                        classification: list[id].token,
+                        data_type,
+                        scope: SCOPE.lock().unwrap().to_string(),
+                        qtd: 0,
+                        ord: 0
+                    });
                 }
-
-                table.push(Row {
-                    name: name,
-                    classification: list[id].token,
-                    data_type,
-                    scope: SCOPE.lock().unwrap().to_string(),
-                    qtd: 32,
-                    ord: 12
-                });
+                
                 return id+1;
             }
             return id;
@@ -982,13 +1062,13 @@ fn main() -> std::io::Result<()> {
     // Chama a função para iniciar a análise gramatical
     ggsv(&mut tree, &list, 0,&mut table);
 
-    println!("\n >>> TREE <<< \n");
-    // tree.list();
+    //println!("\n >>> TREE <<< \n");
+     //tree.list();
 
     println!("\n >>> TABLE <<< \n");
-    // for value in table {
-    //     println!("{}", value);
-    // }
+    for value in table {
+        println!("{}", value);
+    }
     
     Ok(())
 }
