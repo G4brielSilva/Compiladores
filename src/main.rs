@@ -97,7 +97,6 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                tree.add_child("}");
                id+=1;
             } else {
-                println!("{}",list[id]);
                 panic!("Erro: Token inesperado {}", list[id].value);
             }
             
@@ -648,6 +647,9 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                     }else{
                         panic!("Tipo inesperado {}",list[id]);
                     }
+                } else {
+                    tree.add_child("EXP");
+                    id = ggsv(&mut tree.children[3], list, id,table);
                 }
             }
             return id;
@@ -908,7 +910,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
             return id;
         },
         "NAME" => {
-            if check_final_token(id,list)&& list[id].value == "(" {
+            if check_final_token(id,list) && list[id].value == "(" {
                 tree.add_child("(");
                 id += 1;
 
@@ -1006,8 +1008,13 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
 
                     let data_type;
                     let mut a = 1;
+                    let mut classification = "Atribute".to_string();
                     while list[id - a].value == "[" || list[id - a].value == "]" { 
                         a += 1;
+                    }
+
+                    if list[id-1].value == "]" {
+                        classification = "Array".to_string()
                     }
 
                     if matches!(list[id - a].token, Token::Identifier | Token::Type) {
@@ -1018,7 +1025,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
     
                     table.push(Row {
                         name: name,
-                        classification: "Atribute".to_string(),
+                        classification,
                         data_type,
                         scope: SCOPE.lock().unwrap().to_string(),
                         qtd: 0,

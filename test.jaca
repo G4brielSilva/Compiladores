@@ -8,6 +8,7 @@ concrete class Funcao {
     }
 
     protected local final concrete int maiorMesmo(int a,int c,int b) {
+        result = result[1];
         return this.maior(1,2,3);
     }
     private local final int teste = i + 25;
