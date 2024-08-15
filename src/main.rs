@@ -353,6 +353,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                         let mut qtd = QTD.lock().unwrap();
                         *qtd = *qtd+1;
                         row.qtd = *qtd;
+                        row.classification = "Function".to_string();
                     }
                 }                
                 id = ggsv(&mut tree.children[0], list, id,table);
@@ -361,6 +362,7 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                     let mut ordem = ORDEM.lock().unwrap();
                     last.ord = *ordem;
                     *ordem = *ordem+1;
+                    last.classification = "Parameter".to_string();
                 }
                 id = ggsv(&mut tree.children[2], list, id,table);
             }
@@ -983,9 +985,16 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                         adicionar = true;
                     }
 
-                    if rows.len() == 0 && !matches!(list[id-1].token, Token::Identifier | Token::Type | Token::Instance | Token::Inheritance ) {
-                        if !matches!(list[id-1].token, Token::Final | Token::ClassType ) {
-                            panic!("Erro: Não é possível acessar um valor não declarado anteriormente {}", list[id].value);
+                    if rows.len() == 0 {
+                        let mut a = 1;
+                        while list[id - a].value == "[" || list[id - a].value == "]" { 
+                            a += 1;
+                        }
+
+                        if !matches!(list[id - a].token, Token::Identifier | Token::Type | Token::Instance | Token::Inheritance ) {
+                            if !matches!(list[id - a].token, Token::Final | Token::ClassType ) {
+                                panic!("Erro: Não é possível acessar um valor não declarado anteriormente {}", list[id].value);
+                            }
                         }
                     }
                 }
@@ -996,15 +1005,20 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                     let name = list[id].value.to_owned();
 
                     let data_type;
-                    if matches!(list[id-1].token, Token::Type) {
-                        data_type = list[id-1].value.to_string();
+                    let mut a = 1;
+                    while list[id - a].value == "[" || list[id - a].value == "]" { 
+                        a += 1;
+                    }
+
+                    if matches!(list[id - a].token, Token::Identifier | Token::Type) {
+                        data_type = list[id-a].value.to_string();
                     } else {
                         data_type = "void".to_string();
                     }
     
                     table.push(Row {
                         name: name,
-                        classification: list[id].token,
+                        classification: "Atribute".to_string(),
                         data_type,
                         scope: SCOPE.lock().unwrap().to_string(),
                         qtd: 0,

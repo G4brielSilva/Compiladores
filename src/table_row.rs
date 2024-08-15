@@ -5,7 +5,7 @@ use core::fmt;
 #[derive(Clone)]
 pub struct Row {
     pub name: String,
-    pub classification: Token,
+    pub classification: String,
     pub data_type: String,
     pub scope: String,
     pub qtd: u32,
