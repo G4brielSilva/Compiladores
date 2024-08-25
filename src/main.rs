@@ -45,9 +45,7 @@ fn verifica_tipo<'a>(table: &mut Vec<Row>, list: &'a [Node],id:usize,tipo:String
 
 fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table: &mut Vec<Row>) -> usize {
     let mut id = index;
-    if id<list.len() {
-        println!("{} {}",list[id].value, tree.value);
-    }    
+    
     if list.len() <= id {
         tree.add_child(EPSLON);
         return id;
@@ -98,7 +96,6 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                tree.add_child("{");
                id+=1;
             } else {
-                println!("{} {} {}", id, list.len(), list[id].value);
                 panic!("Erro: Token inesperado {}", list[id].value);
             }
             tree.add_child("ITEM_DECLS");
@@ -964,7 +961,6 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                         panic!("Erro: Quantidade de parâmetros incorreta. Esperado {}, recebido {}", row.qtd, count);
                     }
                 }
-                println!("count: {}", count);
                 tree.add_child("(");
                 id += 1;
 
@@ -1147,16 +1143,16 @@ fn main() -> std::io::Result<()> {
         });
     }
     
-    println!("\n >>> LIST <<< \n");
+    // println!("\n >>> LIST <<< \n");
     // for value in &list {
-    //     println!("{}", value);
+    //      println!("{}", value);
     // }
 
-    // Chama a função para iniciar a análise gramatical
+    //Chama a função para iniciar a análise gramatical
     ggsv(&mut tree, &list, 0,&mut table);
 
-    //println!("\n >>> TREE <<< \n");
-     //tree.list();
+    println!("\n >>> TREE <<< \n");
+    tree.list();
 
     println!("\n >>> TABLE <<< \n");
     for value in table {
