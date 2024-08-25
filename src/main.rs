@@ -10,6 +10,7 @@ use enum_token::Token;
 use node::Node;
 use table_row::Row;
 use utils::*;
+use core::panic;
 use std::any::type_name;
 
 
@@ -22,6 +23,7 @@ lazy_static! {
     static ref SCOPE: Mutex<String> = Mutex::new(String::from("global"));
     static ref ORDEM: Mutex<u32> = Mutex::new(1);
     static ref QTD: Mutex<u32> = Mutex::new(0);
+    static ref CLASSSCOPE: Mutex<String> = Mutex::new(String::from("null"));
 }
 
 const EPSLON: &str = "ε";
@@ -76,14 +78,23 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
         "DECLARATION" => {
             tree.add_child("STRUCT");
             id = ggsv(&mut tree.children[0], list, id,table);
-            
+            if list[id-1].value == "class"{
+                *CLASSSCOPE.lock().unwrap() = list[id].value.to_string();
+            }
             tree.add_child("ID");            
             id = ggsv(&mut tree.children[1], list, id,table);
 
             tree.add_child("INHERITANCE");
             id = ggsv(&mut tree.children[2], list, id,table);
-            
+            let mut old_scope: String = SCOPE.lock().unwrap().to_string();
+
             if check_final_token(id,list)&& list[id].value == "{"  {
+                let name = &list[id-1].value;
+                {
+                    let mut escopo = SCOPE.lock().unwrap();
+                    old_scope = escopo.to_string();
+                    *escopo = String::from(name);
+                } 
                tree.add_child("{");
                id+=1;
             } else {
@@ -92,8 +103,12 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
             }
             tree.add_child("ITEM_DECLS");
             id = ggsv(&mut tree.children[4], list, id,table);
-            
             if check_final_token(id,list)&& list[id].value == "}" {
+                {
+                    let mut escopo = SCOPE.lock().unwrap();
+                    *escopo = String::from(old_scope);
+                }
+                *CLASSSCOPE.lock().unwrap() = "null".to_string();
                tree.add_child("}");
                id+=1;
             } else {
@@ -290,6 +305,11 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
         },
         "ARRAY" => {
             if check_final_token(id,list)&& list[id].value == "[" {
+                if let Some(last) = table.last_mut() {
+                    if last.name == list[id-1].value && last.scope == *SCOPE.lock().unwrap() {
+                        last.data_type = "array".to_string();
+                    }
+                }
                 tree.add_child(&list[id].value);
                 id += 1;
                 if check_final_token(id,list)&& list[id].value == "]" {
@@ -364,6 +384,10 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                     last.classification = "Parameter".to_string();
                 }
                 id = ggsv(&mut tree.children[2], list, id,table);
+                let mut ordem = ORDEM.lock().unwrap();
+                let mut qtd = QTD.lock().unwrap();
+                *ordem = 1;
+                *qtd = 0;
             }
 
             return id;
@@ -890,6 +914,12 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
         },
         "ARRAY_SIZE" => {
             if list[id].value == "[" {
+                let lastValue = &list[id-1].value;
+                for (_,row) in table.iter().enumerate(){
+                    if row.name == lastValue.to_string() && (row.scope == *SCOPE.lock().unwrap() || row.scope == "global") && row.data_type != "array".to_string() {
+                        panic!("Erro: Variável {} já declarada como {}. Não é possível utilizar [].", row.name, row.data_type);
+                    }
+                }
                 tree.add_child("[");
                 id += 1;
                 tree.add_child("EXP_MATH");
@@ -947,6 +977,24 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
             if check_final_token(id,list) && list[id].value == "."{
                 tree.add_child(".");
                 id+=1;
+                let lastValue = &list[id-2].value;
+                if lastValue == "this" {
+                    let class = CLASSSCOPE.lock().unwrap();
+                    let rows = find_on_table_by(table, &class, "scope");
+                    let in_scope_rows: Vec<_> = rows
+                            .iter()
+                            .filter(|row| row.scope == class.to_string() && row.name == list[id].value)
+                            .cloned()
+                            .collect();
+                    if in_scope_rows.len() == 0 {
+                        panic!("Erro: Não é possível acessar um método não declarado anteriormente {}", list[id].value);
+                    }
+                }
+                for (_,row) in table.iter().enumerate(){
+                    if row.name == lastValue.to_string() && row.data_type != "class".to_string() {
+                        println!("testeaaaaaaaaaaaaaaaaaaa");
+                    }
+                }
 
                 tree.add_child("ID");
                 id = ggsv(&mut tree.children[1], list, id,table);
@@ -1013,8 +1061,8 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                         a += 1;
                     }
 
-                    if list[id-1].value == "]" {
-                        classification = "Array".to_string()
+                    if list[id-1].value == "class" {
+                        classification = "class".to_string()
                     }
 
                     if matches!(list[id - a].token, Token::Identifier | Token::Type) {
