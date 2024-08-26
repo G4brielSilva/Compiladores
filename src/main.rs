@@ -47,9 +47,6 @@ fn verifica_tipo<'a>(table: &mut Vec<Row>, list: &'a [Node],id:usize,tipo:String
 
 fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table: &mut Vec<Row>) -> usize {
     let mut id = index;
-    // if id<list.len() {
-    //     println!("{} {}",list[id].value, tree.value);
-    // }    
     if list.len() <= id {
         tree.add_child(EPSLON);
         return id;
@@ -100,7 +97,6 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                tree.add_child("{");
                id+=1;
             } else {
-                println!("{} {} {}", id, list.len(), list[id].value);
                 panic!("Erro: Token inesperado {}", list[id].value);
             }
             tree.add_child("ITEM_DECLS");
@@ -916,9 +912,9 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
         },
         "ARRAY_SIZE" => {
             if list[id].value == "[" {
-                let lastValue = &list[id-1].value;
+                let last_value = &list[id-1].value;
                 for (_,row) in table.iter().enumerate(){
-                    if row.name == lastValue.to_string() && (row.scope == *SCOPE.lock().unwrap() || row.scope == "global") && row.data_type != "array".to_string() {
+                    if row.name == last_value.to_string() && (row.scope == *SCOPE.lock().unwrap() || row.scope == "global") && row.data_type != "array".to_string() {
                         panic!("Erro: Variável {} já declarada como {}. Não é possível utilizar [].", row.name, row.data_type);
                     }
                 }
@@ -943,6 +939,29 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
         },
         "NAME" => {
             if check_final_token(id,list) && list[id].value == "(" {
+                let last_value = &list[id-1].value;
+                let rows = find_on_table_by(table, last_value, "name");
+                let in_scope_rows: Vec<_> = rows
+                        .iter()
+                        .filter(|row| (row.scope == *SCOPE.lock().unwrap()|| row.scope == *CLASSSCOPE.lock().unwrap()) && row.classification == "Function".to_string())
+                        .cloned()
+                        .collect();
+                if in_scope_rows.len() == 0 {
+                    panic!("Erro: Não é possível acessar uma função não declarada anteriormente {}", last_value);
+                }
+                let mut i = 1;
+                let mut count = 0;
+                while list[id + i].value != ")" {
+                    if list[id + i].value != "," && list[id + i].value != "[" && list[id + i].value != "]" {
+                        count += 1;
+                    }
+                    i += 1;
+                }
+                for row in in_scope_rows.iter(){
+                    if row.qtd != count {
+                        panic!("Erro: Quantidade de parâmetros incorreta. Esperado {}, recebido {}", row.qtd, count);
+                    }
+                }
                 tree.add_child("(");
                 id += 1;
 
@@ -979,8 +998,8 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
             if check_final_token(id,list) && list[id].value == "."{
                 tree.add_child(".");
                 id+=1;
-                let lastValue = &list[id-2].value;
-                if lastValue == "this" {
+                let last_value = &list[id-2].value;
+                if last_value == "this" {
                     let class = CLASSSCOPE.lock().unwrap();
                     let rows = find_on_table_by(table, &class, "scope");
                     let in_scope_rows: Vec<_> = rows
@@ -993,8 +1012,8 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                     }
                 }
                 for (_,row) in table.iter().enumerate(){
-                    if row.name == lastValue.to_string() && row.data_type != "class".to_string() {
-                        println!("testeaaaaaaaaaaaaaaaaaaa");
+                    if row.name == last_value.to_string() && row.data_type != "class".to_string() && (row.scope == "global" || row.scope == *SCOPE.lock().unwrap()) {
+                        panic!("Erro: Variável {} já declarada como {}. Não é possível acessar um campo.", row.name, row.data_type);
                     }
                 }
 
@@ -1236,12 +1255,12 @@ fn main() -> std::io::Result<()> {
         });
     }
     
-    println!("\n >>> LIST <<< \n");
+    // println!("\n >>> LIST <<< \n");
     // for value in &list {
-    //     println!("{}", value);
+    //      println!("{}", value);
     // }
 
-    // Chama a função para iniciar a análise gramatical
+    //Chama a função para iniciar a análise gramatical
     ggsv(&mut tree, &list, 0,&mut table);
 
     println!("\n >>> TREE <<< \n");
