@@ -17,6 +17,7 @@ pub enum OP {
     GROET,
     MOET,
     NEQ,
+    LBL
 }
 
 impl fmt::Display for OP {
@@ -37,6 +38,7 @@ impl fmt::Display for OP {
             OP::GROET => write!(f, "GROET"),
             OP::MOET => write!(f, "MOET"),
             OP::NEQ => write!(f, "NEQ"),
+            OP::LBL => write!(f, "LBL")
         }
     }
 }

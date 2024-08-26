@@ -1237,7 +1237,6 @@ fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, p
     if previous == EPSLON && VALID_VALUES.contains(&tree.value) && tree.children[0].value != EPSLON {
         if tree.value == "VAR" && tree.children[2].children[0].value != EPSLON {
             let value = &tree.children[2];
-            
             if value.children.len() == 2 {
                 let inter_code_row = InterCodeRow { 
                     op: OP::ATRIB,
@@ -1250,6 +1249,7 @@ fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, p
             }
         }
     }
+    
 
     if tree.value == "COMMAND" && tree.children[0].value != "ATRIB" {
         match tree.children[0].value {
@@ -1283,13 +1283,21 @@ fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, p
             },
             "while" => {
                 let inter_code_row = InterCodeRow { 
-                    op: OP::ATRIB,
-                    end1: Some("tmp".to_owned()+&id.to_string()),
+                    op: OP::LBL,
+                    end1: Some("LABEL_INI".to_owned()),
                     end2: None,
                     end3: None,
                 };
 
                 table.push(inter_code_row);
+                code_inter(&mut tree.children[2], table, "EXP_LOGIC", id);
+
+                let mut inter_code_row = InterCodeRow { 
+                    op: OP::ATRIB,
+                    end1: Some("tmp".to_owned()+&id.to_string()),
+                    end2: None,
+                    end3: None,
+                };
                 return code_inter(&mut tree.children[2], table, "EXP_LOGIC", id);
             },
             "do" => {
@@ -1306,9 +1314,9 @@ fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, p
                 return code_inter(&mut tree.children[4], table, "EXP_LOGIC", id);
             },
             "for" => {
-                let mut inter_code_row = InterCodeRow { 
-                    op: OP::ATRIB,
-                    end1: Some("tmp".to_owned()+&id.to_string()),
+                let inter_code_row = InterCodeRow { 
+                    op: OP::LBL,
+                    end1: Some("LABEL_INI".to_owned()),
                     end2: None,
                     end3: None,
                 };
@@ -1396,7 +1404,7 @@ fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, p
             table.push(InterCodeRow { 
                 op: OP::ATRIB,
                 end1: Some("tmp".to_owned()+&id.to_string()),
-                end2,
+                end2: end2,
                 end3: None,
             });
             process_inter_code(tree, "OP_MATH", &mut table[id]);
@@ -1420,12 +1428,13 @@ fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, p
     return id;
 }
 
+
 fn main() -> std::io::Result<()> {
     let mut list:Vec<Node> = vec![];
 
     let mut table:Vec<Row> = vec![];
     
-    let contents = read_file("./test.jaca")?;
+    let contents = read_file("./testa.jaca")?;
     
     let strings = separate_file_content(&contents).into_iter().filter(|s| s!= "\r").collect::<Vec<String>>(); // Separando as strings do arquivo em tokens
     println!("{:?}", strings);
@@ -1461,14 +1470,14 @@ fn main() -> std::io::Result<()> {
         println!("{}", value);
     }
 
-    // println!("\n");
-    // let mut inter_code_table:Vec<InterCodeRow> = vec![];
-    // code_inter(&mut tree, &mut inter_code_table, EPSLON, 0);
+    println!("\n");
+    let mut inter_code_table:Vec<InterCodeRow> = vec![];
+    code_inter(&mut tree, &mut inter_code_table, EPSLON, 0);
     
-    // println!("{}",inter_code_table.len());
+    println!("{}",inter_code_table.len());
 
-    // for val in inter_code_table {
-    //     println!("{:?}", val);
-    // }
+    for val in inter_code_table {
+        println!("{:?}", val);
+    }
     Ok(())
 }
