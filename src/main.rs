@@ -1118,7 +1118,6 @@ fn process_inter_code<'a>(tree: &mut TreeNode<&'a str>, previous: &str, row: &mu
         }
     }
     if previous == "OP_MATH" && tree.value == "EXP_MATH" {
-        println!("{}", tree.children[1].children[0].value);
         match tree.children[1].children[0].value {
             "+" => { row.op = OP::ADD },
             "-" => { row.op = OP::SUB },
@@ -1154,7 +1153,8 @@ fn process_inter_code<'a>(tree: &mut TreeNode<&'a str>, previous: &str, row: &mu
     }
 }
 
-fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, previous: &str, index: &mut usize) {
+fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, previous: &str, index: usize) -> usize {
+    let mut id = index;
     if previous == EPSLON && VALID_VALUES.contains(&tree.value) && tree.children[0].value != EPSLON {
         if tree.value == "VAR" && tree.children[2].children[0].value != EPSLON {
             let value = &tree.children[2];
@@ -1167,43 +1167,48 @@ fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, p
                     end3: None,
                 };
                 table.push(inter_code_row);
-                return code_inter(tree, table, "EXP_MATH", index);
+                return code_inter(tree, table, "EXP_MATH", id);
             }
         }
     }
 
     if previous == "EXP_MATH" && tree.value == previous {
         if tree.children.len() > 1 {
-            let mut a = table[*index].clone();
-            table[0].end1 = Some("tmp".to_owned()+&index.to_string());
-            code_inter(&mut tree.children[2], table, "EXP_MATH", index);
-            
-            let end2; 
-            if  table.len() > *index {
-                end2 = table[*index].end1.clone();
+            let mut a = table[id].clone();
+            table[0].end1 = Some("tmp".to_owned()+&id.to_string());
+            id = code_inter(&mut tree.children[2], table, "EXP_MATH", id);
+
+            let end2;
+            if table.len() > id {
+                end2 = table[id].end1.clone();
             } else {
-                end2 = table[*index-1].end1.clone();
+                end2 = table[id-1].end1.clone();
             }
+
             table.push(InterCodeRow { 
                 op: OP::ATRIB,
-                end1: Some("tmp".to_owned()+&index.to_string()),
+                end1: Some("tmp".to_owned()+&id.to_string()),
                 end2,
                 end3: None,
             });
-            process_inter_code(tree, "OP_MATH", &mut table[*index]);
-            a.end2 = table[*index].end1.clone();
-            *index += 1;
+
+            process_inter_code(tree, "OP_MATH", &mut table[id]);
+            a.end2 = table[id].end1.clone();
+            id += 1;
             table.push(a);
-            return code_inter(&mut tree.children[0], table, "EXP_MATH", index);
+            return code_inter(&mut tree.children[0], table, "EXP_MATH", id+1);
         } else {
-            process_inter_code(tree, "EXP_MATH", &mut table[*index]);
-            return *index += 1;
+            println!(" ABACATE {} {} {} {:?}", table.len(), previous, id, table[id]);
+            process_inter_code(tree, "EXP_MATH", &mut table[id]);
+            return id + 1;
         }
     }
 
     for child in &mut tree.children {
-        code_inter(child, table, previous, index);
+        id = code_inter(child, table, previous, id);
+
     }
+    return id;
 }
 
 fn main() -> std::io::Result<()> {
@@ -1249,7 +1254,8 @@ fn main() -> std::io::Result<()> {
 
     println!("\n");
     let mut inter_code_table:Vec<InterCodeRow> = vec![];
-    code_inter(&mut tree, &mut inter_code_table, EPSLON, &mut 0);
+    code_inter(&mut tree, &mut inter_code_table, EPSLON, 0);
+    
     println!("{}",inter_code_table.len());
 
     for val in inter_code_table {
