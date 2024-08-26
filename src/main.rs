@@ -1269,7 +1269,21 @@ fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, p
                 table.push(inter_code_row);
                 return code_inter(&mut tree.children[4], table, "EXP_LOGIC", id);
             },
-            // "for"
+            "for" => {
+                let mut inter_code_row = InterCodeRow { 
+                    op: OP::ATRIB,
+                    end1: Some("tmp".to_owned()+&id.to_string()),
+                    end2: None,
+                    end3: None,
+                };
+
+                table.push(inter_code_row);
+                let for_exp = &mut tree.children[2];
+
+                id = code_inter(&mut for_exp.children[0], table, previous, id);
+                id = code_inter(&mut for_exp.children[2], table, "EXP_LOGIC", id);
+                return  code_inter(&mut for_exp.children[4], table, previous, id);
+            },
             &_ => {
                 println!("{}", tree.children[0].value);
             },
