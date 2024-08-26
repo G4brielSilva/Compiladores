@@ -91,3 +91,5 @@ PROGRAM -> [DECLARATION] [DECLARATIONS]
 [DECLARATION] [DECLARATIONS] -> [DECLARATION] [DECLARATIONS] || E
 
 [DECLARATION] -> [STRUCT] [ID] [INHERITANCE] ({) [ITEM_DECLS] (})
+
+command, value e atrib, var, exp (item_decl -> atrib_decl)

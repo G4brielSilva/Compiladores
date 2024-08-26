@@ -4,6 +4,7 @@ mod tree;
 mod linked_list;
 mod table_row;
 mod utils;
+mod inter_code;
 
 use tree::TreeNode;
 use enum_token::Token;
@@ -12,6 +13,7 @@ use table_row::Row;
 use utils::*;
 use core::panic;
 use std::any::type_name;
+use inter_code::*;
 
 
 #[macro_use]
@@ -45,9 +47,9 @@ fn verifica_tipo<'a>(table: &mut Vec<Row>, list: &'a [Node],id:usize,tipo:String
 
 fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table: &mut Vec<Row>) -> usize {
     let mut id = index;
-    if id<list.len() {
-        println!("{} {}",list[id].value, tree.value);
-    }    
+    // if id<list.len() {
+    //     println!("{} {}",list[id].value, tree.value);
+    // }    
     if list.len() <= id {
         tree.add_child(EPSLON);
         return id;
@@ -1098,12 +1100,73 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
         }
     }
 }
+
+const VALID_VALUES: &[&str] = &["VAR", "COMMAND"];
+
+fn process_inter_code<'a>(tree: &mut TreeNode<&'a str>, previous: &str, row: &mut InterCodeRow) {
+    if previous == EPSLON {
+        return;
+    }
+    
+    if previous == "VALUE" {
+        if tree.value == "EXP_MATH" {
+            return process_inter_code(tree, "EXP_MATH", row);
+        }
+    }
+
+    if previous == "EXP_MATH" {
+        println!("{} {:?}", tree.value, row);
+        if tree.value == previous && tree.children.len() == 1 {
+            return process_inter_code(tree, "NUMBER", row);
+        }
+    }
+
+    if previous == "NUMBER" {
+        if tree.value == previous {
+            row.end2 = Some(tree.children[0].value.to_string());
+            return;
+        }
+    }
+
+    for child in &mut tree.children {
+        process_inter_code(child, previous, row);
+    }
+}
+
+fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, previous: &str) {
+    if VALID_VALUES.contains(&tree.value) && tree.children[0].value != EPSLON {
+        if tree.value == "VAR" && tree.children[2].children[0].value != EPSLON {
+            let value = &tree.children[2];
+            println!("{}", value.children.len());
+            if value.children.len() == 2 {
+                let mut inter_code_row = InterCodeRow { 
+                    op: OP::ATRIB,
+                    end1: Some((tree.children[0].children[0].value).to_string()),
+                    end2: None,
+                    end3: None,
+                };
+
+                let previous= tree.children[2].value;
+        
+                process_inter_code(&mut tree.children[2], previous, &mut inter_code_row);
+                println!("{:?}", inter_code_row);
+                table.push(inter_code_row);
+
+            }
+        }
+    }
+
+    for child in &mut tree.children {
+        code_inter(child, table, previous);
+    }
+}
+
 fn main() -> std::io::Result<()> {
     let mut list:Vec<Node> = vec![];
 
     let mut table:Vec<Row> = vec![];
     
-    let contents = read_file("./test.jaca")?;
+    let contents = read_file("./testa.jaca")?;
     
     let strings = separate_file_content(&contents).into_iter().filter(|s| s!= "\r").collect::<Vec<String>>(); // Separando as strings do arquivo em tokens
     println!("{:?}", strings);
@@ -1132,12 +1195,16 @@ fn main() -> std::io::Result<()> {
     ggsv(&mut tree, &list, 0,&mut table);
 
     //println!("\n >>> TREE <<< \n");
-     //tree.list();
+    //  tree.list();
 
     println!("\n >>> TABLE <<< \n");
-    for value in table {
+    for value in &table {
         println!("{}", value);
     }
-    
+
+    println!("\n");
+    let mut inter_code_table:Vec<InterCodeRow> = vec![];
+    code_inter(&mut tree, &mut inter_code_table, EPSLON);
+
     Ok(())
 }

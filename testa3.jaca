@@ -1,0 +1,10 @@
+concrete class Turma {
+    private local final int i = 1;
+    private local final result;
+
+    protected local final concrete int maior(int a,int c,int b){
+        for (int i = 0; i < 15; i = ++i) {
+        }
+        return result;
+    }
+}
