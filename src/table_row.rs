@@ -1,4 +1,3 @@
-use crate::enum_token::Token;
 use core::fmt;
 
 #[warn(const_item_mutation)]

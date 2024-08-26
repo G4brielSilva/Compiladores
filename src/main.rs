@@ -12,14 +12,13 @@ use node::Node;
 use table_row::Row;
 use utils::*;
 use core::panic;
-use std::any::type_name;
 use inter_code::*;
 
 
 #[macro_use]
 extern crate lazy_static;
 
-use std::{any::Any, sync::Mutex};
+use std::sync::Mutex;
 
 lazy_static! {
     static ref SCOPE: Mutex<String> = Mutex::new(String::from("global"));
@@ -30,8 +29,26 @@ lazy_static! {
 
 const EPSLON: &str = "ε";
 
-fn type_of<T>(_: &T) -> &str {
-    type_name::<T>()
+fn retorna_tipo(a: &str, table: &mut Vec<Row>) -> String {
+    if a == "true" || a == "false" {
+        return String::from("bool");
+    } else if a == "null" {
+        return String::from("null");
+    } else if valid_numeric_value(a) {
+        return String::from("int");
+    } else if valid_string_value(a) {
+        return String::from("string");
+    } else if valid_char_value(a) {
+        return String::from("char");
+    } else if a == "void" {
+        return String::from("void");
+    } else {
+        let row = find_on_table_by(table, a, "name");
+        if row.len() > 0 {
+            return row[0].data_type.clone();
+        }
+    }
+    return String::from("null");
 }
 
 fn verifica_tipo<'a>(table: &mut Vec<Row>, list: &'a [Node],id:usize,tipo:String) -> bool{
@@ -614,6 +631,18 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                     tree.add_child("return");
                     id += 1;
 
+                    let mut i = 0;
+                    let tipo = retorna_tipo(&SCOPE.lock().unwrap().to_string(), table);
+                    while list[id + i].value != ";" {
+                        if list[id+i].value != "+" && list[id+i].value != "-" && list[id+i].value != "*" && list[id+i].value != "/" && list[id+i].value != "<" && list[id+i].value != ">" && list[id+i].value != ">=" && list[id+i].value != "<=" && list[id+i].value != "==" && list[id+i].value != "!=" {
+                            if tipo != retorna_tipo(&list[id+i].value,table) {
+                                panic!("Erro: Tipo esperado {} recebido {}",tipo, retorna_tipo(&list[id+i].value,table));
+                            }
+                        }
+                        i += 1;
+                        
+                    }
+
                     tree.add_child("EXP");
                     id = ggsv(&mut tree.children[1], list, id,table);
 
@@ -641,6 +670,8 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
         "ATRIB" => {
             tree.add_child("ID");
             id = ggsv(&mut tree.children[0], list, id,table);
+
+            let tipo = retorna_tipo(&list[id-1].value,table);
             
             tree.add_child("NAME");
             id = ggsv(&mut tree.children[1], list, id,table);
@@ -651,29 +682,9 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
             } else {
                 panic!("Erro: Token inesperado {}", list[id].value);
             }
-            if list[id].value == "new" || list[id].value == "++" || list[id].value == "--" {
-                tree.add_child("EXP");
-                id = ggsv(&mut tree.children[3], list, id,table);
-            }else{
-                if verifica_tipo(table, list, id-2, "int".to_string()) || list[id-2].value.parse::<i64>().is_ok() {
-                    if list[id].value.parse::<i64>().is_ok() || verifica_tipo(table, list, id, "int".to_string()) {
-                        tree.add_child("EXP");
-                        id = ggsv(&mut tree.children[3], list, id,table);
-                    }else{
-                        panic!("Tipo inesperado {}",list[id]);
-                    }
-                }else if verifica_tipo(table, list, id-2, "float".to_string()) || list[id-2].value.parse::<f64>().is_ok() {
-                    if !list[id].value.parse::<f64>().is_ok() || !verifica_tipo(table, list, id, "float".to_string()) {
-                        tree.add_child("EXP");
-                        id = ggsv(&mut tree.children[3], list, id,table);
-                    }else{
-                        panic!("Tipo inesperado {}",list[id]);
-                    }
-                } else {
-                    tree.add_child("EXP");
-                    id = ggsv(&mut tree.children[3], list, id,table);
-                }
-            }
+
+            tree.add_child("EXP");
+            id = ggsv(&mut tree.children[3], list, id,table);
             return id;
         },
         "ELSE" => {
@@ -769,6 +780,14 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
 
                 tree.add_child("TYPE");
                 id = ggsv(&mut tree.children[1], list, id,table);
+                
+                let last_value = list[id-2].value.to_string();
+                if last_value == "return" {
+                    let row = find_on_table_by(table, &*SCOPE.lock().unwrap(), "name");
+                    if row[0].data_type != list[id].value {
+                        panic!("Erro: Tipo inesperado {}", list[id].value);
+                    }
+                }
 
                 tree.add_child("NAME");
                 id = ggsv(&mut tree.children[2], list, id,table);
@@ -776,6 +795,10 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                 tree.add_child("OPERATOR");
                 id = ggsv(&mut tree.children[0], list, id,table);
                 
+                if retorna_tipo(&list[id].value,table) != "int" && retorna_tipo(&list[id].value,table) != "float" {
+                    panic!("Erro: Tipo inesperado {}", list[id].value);
+                }
+
                 tree.add_child("ID");
                 id = ggsv(&mut tree.children[1], list, id,table);
 
@@ -828,27 +851,20 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
             id = ggsv(&mut tree.children[0], list, id,table);
 
             if list[id].value == ">" || list[id].value == "<" || list[id].value == ">=" || list[id].value == "<=" || list[id].value == "==" || list[id].value == "!=" {
+                let mut i = 0;
+                let tipo = retorna_tipo(&list[id-1].value,table);
+                while list[id + i].value != ";" {
+                    if(list[id+i].value != ">" && list[id+i].value != "<" && list[id+i].value != ">=" && list[id+i].value != "<=" && list[id+i].value != "==" && list[id+i].value != "!="){
+                        if tipo != retorna_tipo(&list[id+i].value,table) {
+                            panic!("Erro: Tipo esperado {}  recebido {}",tipo, retorna_tipo(&list[id+i].value,table));
+                        }
+                    }
+                    i += 1;
+                }
                 tree.add_child("OP_LOGIC");
                 id = ggsv(&mut tree.children[1], list, id,table );
-                if verifica_tipo(table, list, id-2, "int".to_string()) || list[id-2].value.parse::<i64>().is_ok() {
-                    if list[id].value.parse::<i64>().is_ok() || verifica_tipo(table, list, id, "int".to_string()) {
-                        tree.add_child("EXP_LOGIC");
-                        id = ggsv(&mut tree.children[2], list, id,table);
-                    }else{
-                        panic!("Tipo inesperado {}",list[id]);
-                    }
-                    
-                }else if verifica_tipo(table, list, id-2, "float".to_string()) || list[id-2].value.parse::<f64>().is_ok() {
-                    if !list[id].value.parse::<f64>().is_ok() || !verifica_tipo(table, list, id, "float".to_string()) {
-                        tree.add_child("EXP_LOGIC");
-                        id = ggsv(&mut tree.children[2], list, id,table);
-                    }else{
-                        panic!("Tipo inesperado {}",list[id]);
-                    }
-                } else {
-                    tree.add_child("EXP_LOGIC");
-                    id = ggsv(&mut tree.children[2], list, id,table);
-                }
+                tree.add_child("EXP_LOGIC");
+                id = ggsv(&mut tree.children[2], list, id,table);
             }
             return id;
         },
@@ -859,6 +875,16 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
             if list[id].value == "+" || list[id].value == "-" || list[id].value == "*" || list[id].value == "/" {
                 tree.add_child("OP_MATH");
                 id = ggsv(&mut tree.children[1], list, id,table);
+                let mut i = 0;
+                let tipo = retorna_tipo(&list[id-2].value,table);
+                while list[id + i].value != ";" {
+                    if list[id+i].value != "+" && list[id+i].value != "-" && list[id+i].value != "*" && list[id+i].value != "/" {
+                        if tipo != retorna_tipo(&list[id+i].value,table) {
+                            panic!("Erro: Tipo esperado {}  recebido {}",tipo, retorna_tipo(&list[id+i].value,table));
+                        }
+                    }
+                    i += 1;
+                }
                 
                 if verifica_tipo(table, list, id-2, "int".to_string()) || list[id-2].value.parse::<i64>().is_ok() {
                     if list[id].value.parse::<i64>().is_ok() || verifica_tipo(table, list, id, "int".to_string()) {
@@ -952,16 +978,26 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                 if in_scope_rows.len() == 0 {
                     panic!("Erro: Não é possível acessar uma função não declarada anteriormente {}", last_value);
                 }
+                let rows2 = find_on_table_by(table, last_value, "scope");
+                let in_scope_rows2: Vec<_> = rows2
+                        .iter()
+                        .filter(|row| (row.scope == *last_value|| row.scope == *CLASSSCOPE.lock().unwrap()) && row.classification == "Parameter".to_string())
+                        .cloned()
+                        .collect();
                 let mut i = 1;
                 let mut count = 0;
                 while list[id + i].value != ")" {
                     if list[id + i].value != "," && list[id + i].value != "[" && list[id + i].value != "]" {
+                        if retorna_tipo(&list[id + i].value,table) != in_scope_rows2[count].data_type {
+                            panic!("Erro: Tipo de parâmetro incorreto. Esperado {}, recebido {}", in_scope_rows2[count].data_type, retorna_tipo(&list[id + i].value,table));
+                        }
                         count += 1;
                     }
                     i += 1;
                 }
+                let total:u32 = count as u32;
                 for row in in_scope_rows.iter(){
-                    if row.qtd != count {
+                    if row.qtd != total {
                         panic!("Erro: Quantidade de parâmetros incorreta. Esperado {}, recebido {}", row.qtd, count);
                     }
                 }
@@ -1203,7 +1239,7 @@ fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, p
             let value = &tree.children[2];
             
             if value.children.len() == 2 {
-                let mut inter_code_row = InterCodeRow { 
+                let inter_code_row = InterCodeRow { 
                     op: OP::ATRIB,
                     end1: Some(tree.children[0].children[0].value.to_string()),
                     end2: None,
@@ -1246,7 +1282,7 @@ fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, p
                 return code_inter(&mut tree.children[2], table, "EXP_LOGIC", id);
             },
             "while" => {
-                let mut inter_code_row = InterCodeRow { 
+                let inter_code_row = InterCodeRow { 
                     op: OP::ATRIB,
                     end1: Some("tmp".to_owned()+&id.to_string()),
                     end2: None,
@@ -1282,7 +1318,7 @@ fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, p
 
                 id = code_inter(&mut for_exp.children[0], table, previous, id);
                 id = code_inter(&mut for_exp.children[2], table, "EXP_LOGIC", id);
-                return  code_inter(&mut for_exp.children[4], table, previous, id);
+                return  code_inter(&mut for_exp.children[3], table, previous, id);
             },
             &_ => {
                 println!("{}", tree.children[0].value);
@@ -1389,7 +1425,7 @@ fn main() -> std::io::Result<()> {
 
     let mut table:Vec<Row> = vec![];
     
-    let contents = read_file("./testa.jaca")?;
+    let contents = read_file("./test.jaca")?;
     
     let strings = separate_file_content(&contents).into_iter().filter(|s| s!= "\r").collect::<Vec<String>>(); // Separando as strings do arquivo em tokens
     println!("{:?}", strings);
@@ -1417,23 +1453,22 @@ fn main() -> std::io::Result<()> {
     //Chama a função para iniciar a análise gramatical
     ggsv(&mut tree, &list, 0,&mut table);
 
-    println!("\n >>> TREE <<< \n");
-     tree.list();
+    // println!("\n >>> TREE <<< \n");
+    // tree.list();
 
-    // println!("\n >>> TABLE <<< \n");
-    // for value in &table {
-    //     println!("{}", value);
-    // }
-
-    println!("\n");
-    let mut inter_code_table:Vec<InterCodeRow> = vec![];
-    code_inter(&mut tree, &mut inter_code_table, EPSLON, 0);
-    
-    println!("{}",inter_code_table.len());
-
-    for val in inter_code_table {
-        println!("{:?}", val);
+    println!("\n >>> TABLE <<< \n");
+    for value in &table {
+        println!("{}", value);
     }
 
+    // println!("\n");
+    // let mut inter_code_table:Vec<InterCodeRow> = vec![];
+    // code_inter(&mut tree, &mut inter_code_table, EPSLON, 0);
+    
+    // println!("{}",inter_code_table.len());
+
+    // for val in inter_code_table {
+    //     println!("{:?}", val);
+    // }
     Ok(())
 }
