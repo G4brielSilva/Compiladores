@@ -1,3 +1,4 @@
 concrete class Turma {
-    private local final int i = 1 + 1;
+    private local final int i = 1 * 1 + 1;
+    private local final double result = 2;
 }

@@ -27,7 +27,7 @@ impl fmt::Display for OP {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct InterCodeRow {
     pub op: OP,
     pub end1: Option<String>,
