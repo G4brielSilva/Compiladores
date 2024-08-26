@@ -1175,7 +1175,8 @@ fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, p
     if previous == "EXP_MATH" && tree.value == previous {
         if tree.children.len() > 1 {
             let mut a = table[id].clone();
-            table[0].end1 = Some("tmp".to_owned()+&id.to_string());
+
+            table[id].end1 = Some("tmp".to_owned()+&id.to_string());
             id = code_inter(&mut tree.children[2], table, "EXP_MATH", id);
 
             let end2;
@@ -1191,14 +1192,13 @@ fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, p
                 end2,
                 end3: None,
             });
-
             process_inter_code(tree, "OP_MATH", &mut table[id]);
             a.end2 = table[id].end1.clone();
             id += 1;
             table.push(a);
-            return code_inter(&mut tree.children[0], table, "EXP_MATH", id+1);
+            code_inter(&mut tree.children[0], table, "EXP_MATH", id);
+            return id+1;
         } else {
-            println!(" ABACATE {} {} {} {:?}", table.len(), previous, id, table[id]);
             process_inter_code(tree, "EXP_MATH", &mut table[id]);
             return id + 1;
         }
