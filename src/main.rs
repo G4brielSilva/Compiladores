@@ -1134,11 +1134,31 @@ fn process_inter_code<'a>(tree: &mut TreeNode<&'a str>, previous: &str, row: &mu
         return process_inter_code(tree, "EXP_MATH", row);
     }
 
+    if previous == "EXP_LOGIC" && tree.value == previous {
+        if tree.children.len() == 1 {
+            return process_inter_code(tree, "NUMBER2", row);
+        }
+    }
+
+    if previous == "OP_LOGIC" && tree.value == "EXP_LOGIC" {
+        match tree.children[1].children[0].value {
+            ">" => { row.op = OP::GRT },
+            "<" => { row.op = OP::MT },
+            ">=" => { row.op = OP::GROET },
+            "<=" => { row.op = OP::MOET },
+            "==" => { row.op = OP::EQ },
+            "!=" => { row.op = OP::NEQ },
+            &_ => todo!(),
+        }
+        return process_inter_code(&mut tree.children[0], "NUMBER3", row);
+    }
+
     if previous == "EXP_MATH" && tree.value == previous {
         if tree.children.len() == 1 {
             return process_inter_code(tree, "NUMBER2", row);
         }
     }
+
     if previous == "OP_MATH" && tree.value == "EXP_MATH" {
         match tree.children[1].children[0].value {
             "+" => { row.op = OP::ADD },
@@ -1151,11 +1171,12 @@ fn process_inter_code<'a>(tree: &mut TreeNode<&'a str>, previous: &str, row: &mu
     }
 
     if previous == "NUMBER2" && (tree.value == "NUMBER" || tree.value == "ID")  {
-        row.end2 = Some(tree.children[0].value.to_string());
+        if (!matches!(row.op, OP::RET)) {
+            row.end2 = Some(tree.children[0].value.to_string());
+        }
         return;
     }
 
-    // println!("{} {}", previous, tree.value);
     if previous == "NUMBER1" && (tree.value == "NUMBER" || tree.value == "ID") {
         row.end1 = Some(tree.children[0].value.to_string());
         return;
@@ -1215,9 +1236,29 @@ fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, p
                 return code_inter(&mut tree.children[1], table, "EXP_MATH", id);
             },
             "if" => {
-                println!("VAI TOMAR NO CU PIRANHA");
-            }
-            &_ => todo!(),
+                let mut inter_code_row = InterCodeRow { 
+                    op: OP::ATRIB,
+                    end1: Some("tmp".to_owned()+&id.to_string()),
+                    end2: None,
+                    end3: None,
+                };
+                table.push(inter_code_row);
+                return code_inter(&mut tree.children[2], table, "EXP_LOGIC", id);
+            },
+            "while" => {
+                let mut inter_code_row = InterCodeRow { 
+                    op: OP::ATRIB,
+                    end1: Some("tmp".to_owned()+&id.to_string()),
+                    end2: None,
+                    end3: None,
+                };
+
+                table.push(inter_code_row);
+                return code_inter(&mut tree.children[2], table, "EXP_LOGIC", id);
+            },
+            &_ => {
+                println!("{}", tree.children[0].value);
+            },
         }
     }
 
@@ -1238,6 +1279,40 @@ fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, p
         
         table.push(inter_code_row);
         return code_inter(&mut tree.children[3], table, "EXP_MATH", id);
+    }
+
+    if previous == "EXP_LOGIC" && tree.value == previous {
+        if tree.children.len() > 1 {
+            let mut a = table[id].clone();
+
+            table[id].end1 = Some("tmp".to_owned()+&id.to_string());
+            id = code_inter(&mut tree.children[2], table, "EXP_LOGIC", id);
+
+            let mut end2 = None;
+            if table.len() > id {
+                end2 = table[id].end1.clone();
+            } else {
+                end2 = table[id-1].end1.clone();
+            }
+
+            table.push(InterCodeRow { 
+                op: OP::ATRIB,
+                end1: Some("tmp".to_owned()+&id.to_string()),
+                end2,
+                end3: None,
+            });
+            process_inter_code(tree, "OP_LOGIC", &mut table[id]);
+            if matches!(table[id].op, OP::RET) {
+                a.end2 = None;
+            }
+            id += 1;
+            table.push(a);
+            code_inter(&mut tree.children[0], table, "EXP_MATH", id);
+            return id+1;
+        } else {
+            process_inter_code(tree, "EXP_LOGIC", &mut table[id]);
+            return id + 1;
+        }
     }
 
     if previous == "EXP_MATH" && tree.value == previous {

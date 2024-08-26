@@ -10,7 +10,13 @@ pub enum OP {
     JMZ,
     JNZ,
     JGT,
-    RET
+    RET,
+    EQ,
+    GRT,
+    MT,
+    GROET,
+    MOET,
+    NEQ,
 }
 
 impl fmt::Display for OP {
@@ -25,6 +31,12 @@ impl fmt::Display for OP {
             OP::JNZ => write!(f, "JNZ"),
             OP::JGT => write!(f, "JGT"),
             OP::RET => write!(f, "RET"),
+            OP::EQ => write!(f, "EQ"),
+            OP::GRT => write!(f, "GRT"),
+            OP::MT => write!(f, "MT"),
+            OP::GROET => write!(f, "GROET"),
+            OP::MOET => write!(f, "MOET"),
+            OP::NEQ => write!(f, "NEQ"),
         }
     }
 }

@@ -1,4 +1,13 @@
 concrete class Turma {
-    private local final int i = 1 + 1 + 1;
-    private local final double result = 2 - 1;
+    private local final int i = 1;
+    private local final double result;
+
+    protected local final concrete int maior(int a,int c,int b){
+        result = 0;
+        do {
+            result = i;
+        } while (result > i);
+        
+        return result;
+    }
 }
