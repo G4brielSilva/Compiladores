@@ -6,8 +6,8 @@ concrete class Turma {
         result = 0;
         do {
             result = i;
-        } while (result > i);
-        
+        } while (result > i)
+
         return result;
     }
 }

@@ -1171,7 +1171,7 @@ fn process_inter_code<'a>(tree: &mut TreeNode<&'a str>, previous: &str, row: &mu
     }
 
     if previous == "NUMBER2" && (tree.value == "NUMBER" || tree.value == "ID")  {
-        if (!matches!(row.op, OP::RET)) {
+        if !matches!(row.op, OP::RET) {
             row.end2 = Some(tree.children[0].value.to_string());
         }
         return;
@@ -1256,6 +1256,20 @@ fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, p
                 table.push(inter_code_row);
                 return code_inter(&mut tree.children[2], table, "EXP_LOGIC", id);
             },
+            "do" => {
+                id = code_inter(&mut tree.children[1], table, previous, id);
+
+                let mut inter_code_row = InterCodeRow { 
+                    op: OP::ATRIB,
+                    end1: Some("tmp".to_owned()+&id.to_string()),
+                    end2: None,
+                    end3: None,
+                };
+
+                table.push(inter_code_row);
+                return code_inter(&mut tree.children[4], table, "EXP_LOGIC", id);
+            },
+            // "for"
             &_ => {
                 println!("{}", tree.children[0].value);
             },
