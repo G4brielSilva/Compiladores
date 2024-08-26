@@ -845,6 +845,9 @@ fn ggsv<'a>(tree: &mut TreeNode<&'a str>, list: &'a [Node], index: usize, table:
                     }else{
                         panic!("Tipo inesperado {}",list[id]);
                     }
+                } else {
+                    tree.add_child("EXP_LOGIC");
+                    id = ggsv(&mut tree.children[2], list, id,table);
                 }
             }
             return id;
@@ -1147,18 +1150,18 @@ fn process_inter_code<'a>(tree: &mut TreeNode<&'a str>, previous: &str, row: &mu
         return process_inter_code(&mut tree.children[0], "NUMBER3", row);
     }
 
-    if previous == "NUMBER2" && tree.value == "NUMBER" {
+    if previous == "NUMBER2" && (tree.value == "NUMBER" || tree.value == "ID")  {
         row.end2 = Some(tree.children[0].value.to_string());
         return;
     }
 
     // println!("{} {}", previous, tree.value);
-    if previous == "NUMBER1" && tree.value == "NUMBER" {
+    if previous == "NUMBER1" && (tree.value == "NUMBER" || tree.value == "ID") {
         row.end1 = Some(tree.children[0].value.to_string());
         return;
     }
 
-    if previous == "NUMBER3" && tree.value == "NUMBER" {
+    if previous == "NUMBER3" && (tree.value == "NUMBER" || tree.value == "ID") {
         row.end3 = Some(tree.children[0].value.to_string());
         return;
     }
@@ -1191,6 +1194,52 @@ fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, p
         }
     }
 
+    if tree.value == "COMMAND" && tree.children[0].value != "ATRIB" {
+        match tree.children[0].value {
+            "return" => {
+                let end1;
+                if table.len() > id {
+                    end1 = table[id].end1.clone();
+                } else {
+                    end1 = table[id-1].end1.clone();
+                }
+
+                let mut inter_code_row = InterCodeRow { 
+                    op: OP::RET,
+                    end1,
+                    end2: None,
+                    end3: None,
+                };
+                
+                table.push(inter_code_row);
+                return code_inter(&mut tree.children[1], table, "EXP_MATH", id);
+            },
+            "if" => {
+                println!("VAI TOMAR NO CU PIRANHA");
+            }
+            &_ => todo!(),
+        }
+    }
+
+    if tree.value == "ATRIB" {
+        let end2;
+        if table.len() > id {
+            end2 = table[id].end1.clone();
+        } else {
+            end2 = table[id-1].end1.clone();
+        }
+
+        let mut inter_code_row = InterCodeRow { 
+            op: OP::ATRIB,
+            end1: Some(tree.children[0].children[0].value.to_string()),
+            end2,
+            end3: None,
+        };
+        
+        table.push(inter_code_row);
+        return code_inter(&mut tree.children[3], table, "EXP_MATH", id);
+    }
+
     if previous == "EXP_MATH" && tree.value == previous {
         if tree.children.len() > 1 {
             let mut a = table[id].clone();
@@ -1198,7 +1247,7 @@ fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, p
             table[id].end1 = Some("tmp".to_owned()+&id.to_string());
             id = code_inter(&mut tree.children[2], table, "EXP_MATH", id);
 
-            let end2;
+            let mut end2 = None;
             if table.len() > id {
                 end2 = table[id].end1.clone();
             } else {
@@ -1212,7 +1261,9 @@ fn code_inter<'a>(tree: &mut TreeNode<&'a str>, table: &mut Vec<InterCodeRow>, p
                 end3: None,
             });
             process_inter_code(tree, "OP_MATH", &mut table[id]);
-            a.end2 = table[id].end1.clone();
+            if matches!(table[id].op, OP::RET) {
+                a.end2 = None;
+            }
             id += 1;
             table.push(a);
             code_inter(&mut tree.children[0], table, "EXP_MATH", id);
